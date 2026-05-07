@@ -4,17 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class ComplianceRecords extends Model
+class EmployeeRoleDetail extends Model
 {
-    //
     protected $fillable = [
         'employee_id',
-        'type',
-        'reference_number',
-        'issue_date',
-        'expiry_date',
-        'alert_2_months',
-        'alert_3_months',
+        'role_type',
+        'data',
+    ];
+
+    protected $casts = [
+        'data' => 'array',
     ];
 
     public function employee()

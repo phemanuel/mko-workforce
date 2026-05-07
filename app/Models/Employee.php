@@ -6,51 +6,43 @@ use Illuminate\Database\Eloquent\Model;
 
 class Employee extends Model
 {
-    protected $fillable = [
+    //
+        protected $fillable = [
         'user_id',
-        'phone',
-        'address',
-        'postcode',
-        'date_of_birth',
-        'gender',
-        'nationality',
-        'ni_number',
-        'emergency_contact_name',
-        'emergency_contact_phone',
-        'status',
+        'employee_code',
+        'employment_type',
+        'start_date',
+        'primary_role',
+        'status'
     ];
 
-    /**
-     * USER RELATIONSHIP (LOGIN ACCOUNT)
-     */
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * ONE EMPLOYEE HAS ONE PROFILE (EXTENDED DATA)
-     */
     public function profile()
     {
         return $this->hasOne(EmployeeProfile::class);
     }
 
-    /**
-     * ONE EMPLOYEE HAS MANY DOCUMENTS
-     */
-    public function documents()
+    public function workEligibility()
     {
-        return $this->hasMany(EmployeeDocument::class);
+        return $this->hasOne(EmployeeWorkEligibility::class);
+    }
+
+    public function payroll()
+    {
+        return $this->hasOne(EmployeePayroll::class);
+    }
+
+    public function roleDetail()
+    {
+        return $this->hasOne(EmployeeRoleDetail::class);
     }
 
     public function skills()
     {
         return $this->belongsToMany(Skill::class);
     }
-
-    public function complianceRecords()
-    {
-        return $this->hasMany(ComplianceRecords::class);
-}
 }

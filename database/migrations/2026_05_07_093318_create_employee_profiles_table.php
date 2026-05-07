@@ -11,27 +11,31 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('employees', function (Blueprint $table) {
+        Schema::create('employee_profiles', function (Blueprint $table) {
+
             $table->id();
 
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('employee_id')
+                ->constrained()
+                ->cascadeOnDelete();
 
-            // PERSONAL
-            $table->string('phone')->nullable();
-            $table->string('address')->nullable();
-            $table->string('postcode')->nullable();
             $table->date('date_of_birth')->nullable();
+
             $table->string('gender')->nullable();
+
             $table->string('nationality')->nullable();
 
             $table->string('ni_number')->nullable();
 
-            // EMERGENCY
-            $table->string('emergency_contact_name')->nullable();
-            $table->string('emergency_contact_phone')->nullable();
+            $table->text('address')->nullable();
 
-            // STATUS
-            $table->string('status')->default('pending');
+            $table->string('postcode')->nullable();
+
+            $table->string('phone')->nullable();
+
+            $table->string('emergency_contact_name')->nullable();
+
+            $table->string('emergency_contact_phone')->nullable();
 
             $table->timestamps();
         });
@@ -42,6 +46,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('employees');
+        Schema::dropIfExists('employee_profiles');
     }
 };

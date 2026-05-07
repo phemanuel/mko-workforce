@@ -4,15 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class EmployeeDocument extends Model
+class EmployeeWorkEligibility extends Model
 {
     protected $fillable = [
         'employee_id',
-        'document_type',
-        'file_path',
+        'work_status',
+        'share_code',
         'expiry_date',
-        'verification_status',
-        'verified_by',
     ];
 
     public function employee()

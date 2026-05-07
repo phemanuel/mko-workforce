@@ -8,32 +8,17 @@ class EmployeeProfile extends Model
 {
     protected $fillable = [
         'employee_id',
-        'right_to_work_status',
-        'share_code',
-        'right_to_work_expiry',
-        'employee_code',
-        'employment_type',
-        'start_date',
-        'availability',
-        'primary_role',
-        'secondary_skills',
-        'role_data',
+        'date_of_birth',
+        'gender',
+        'nationality',
+        'ni_number',
+        'address',
+        'postcode',
+        'phone',
+        'emergency_contact_name',
+        'emergency_contact_phone',
     ];
 
-    /**
-     * CAST JSON FIELDS PROPERLY
-     */
-    protected $casts = [
-        'availability' => 'array',
-        'secondary_skills' => 'array',
-        'role_data' => 'array',
-        'right_to_work_expiry' => 'date',
-        'start_date' => 'date',
-    ];
-
-    /**
-     * PROFILE BELONGS TO EMPLOYEE
-     */
     public function employee()
     {
         return $this->belongsTo(Employee::class);

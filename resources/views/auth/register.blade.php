@@ -104,7 +104,7 @@
                 <!-- PHONE -->
                 <div class="mb-4">
                     <label class="text-sm">Phone Number</label>
-                    <input type="text" name="phone"
+                    <input type="text" name="phone_no"
                            class="w-full mt-2 px-4 py-3 border rounded-lg" required>
                 </div>
 

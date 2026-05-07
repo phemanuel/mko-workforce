@@ -2,90 +2,437 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+
 use App\Models\Employee;
 use App\Models\EmployeeProfile;
+use App\Models\EmployeeWorkEligibility;
+use App\Models\Skill;
+use App\Models\EmployeeRoleDetail;
+use App\Models\EmployeePayroll;
 use App\Models\EmployeeDocument;
+use Illuminate\Support\Facades\Storage;
 
 class ApplicationController extends Controller
 {
     public function index()
     {
-        $user = Auth::user();
+        $countries = [
+            'Afghanistan',
+            'Albania',
+            'Algeria',
+            'Andorra',
+            'Angola',
+            'Argentina',
+            'Australia',
+            'Austria',
+            'Bangladesh',
+            'Belgium',
+            'Brazil',
+            'Canada',
+            'China',
+            'Denmark',
+            'Egypt',
+            'France',
+            'Germany',
+            'Ghana',
+            'India',
+            'Ireland',
+            'Italy',
+            'Japan',
+            'Kenya',
+            'Mexico',
+            'Netherlands',
+            'Nigeria',
+            'Norway',
+            'Pakistan',
+            'Poland',
+            'Portugal',
+            'Qatar',
+            'Russia',
+            'Saudi Arabia',
+            'South Africa',
+            'Spain',
+            'Sweden',
+            'Switzerland',
+            'Turkey',
+            'UAE',
+            'United Kingdom',
+            'United States',
+            'Zimbabwe',
+        ];
 
-        return view('application.form', compact('user'));
+        sort($countries);
+
+        return view('application.form', compact('countries'));
     }
 
-    /**
-     * STEP 1 - PERSONAL + EMPLOYMENT DETAILS
-     */
-    public function storeStep1(Request $request)
+    /*
+    |--------------------------------------------------------------------------
+    | STEP 2
+    |--------------------------------------------------------------------------
+    */
+
+    public function step2(Request $request)
     {
         $request->validate([
-            'phone' => 'required',
-            'address' => 'required',
+
+            // Personal Details
+            'full_name' => 'required|string|max:255',
             'date_of_birth' => 'required|date',
+            'gender' => 'required',
+            'nationality' => 'required|string|max:255',
+            'ni_number' => 'required|string|max:255',
+            'address' => 'required|string',
+            'postcode' => 'required|string|max:50',
+            'phone_no' => 'required|string|max:20',
+
+            'emergency_contact_name' => 'required|string|max:255',
+            'emergency_contact_phone' => 'required|string|max:20',
+
+            // Right To Work
+            'work_status' => 'required',
+            'share_code' => 'nullable|string|max:255',
+            'expiry_date' => 'nullable|date',
         ]);
 
-        $user = Auth::user();
+        $user = auth()->user();
 
-        // EMPLOYEE RECORD
-        $employee = Employee::updateOrCreate(
-            ['user_id' => $user->id],
+        /*
+        |--------------------------------------------------------------------------
+        | UPDATE USER NAME
+        |--------------------------------------------------------------------------
+        */
+
+        $user->update([
+            'name' => $request->full_name
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | EMPLOYEE
+        |--------------------------------------------------------------------------
+        */
+
+        $employee = Employee::firstOrCreate([
+            'user_id' => $user->id
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | PROFILE
+        |--------------------------------------------------------------------------
+        */
+
+        EmployeeProfile::updateOrCreate(
             [
-                'phone' => $request->phone,
-                'address' => $request->address,
+                'employee_id' => $employee->id
+            ],
+            [
                 'date_of_birth' => $request->date_of_birth,
-                'status' => 'pending',
+                'gender' => $request->gender,
+                'nationality' => $request->nationality,
+                'ni_number' => $request->ni_number,
+                'address' => $request->address,
+                'postcode' => $request->postcode,
+                'phone' => $request->phone_no,
+                'emergency_contact_name' => $request->emergency_contact_name,
+                'emergency_contact_phone' => $request->emergency_contact_phone,
             ]
         );
 
-        // UPDATE STEP
+        /*
+        |--------------------------------------------------------------------------
+        | WORK ELIGIBILITY
+        |--------------------------------------------------------------------------
+        */
+
+        EmployeeWorkEligibility::updateOrCreate(
+            [
+                'employee_id' => $employee->id
+            ],
+            [
+                'work_status' => $request->work_status,
+                'share_code' => $request->share_code,
+                'expiry_date' => $request->expiry_date,
+            ]
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | NEXT STEP
+        |--------------------------------------------------------------------------
+        */
+
         $user->update([
             'registration_step' => 3
         ]);
 
-        return redirect()->route('complete.application')
-            ->with('success', 'Step 1 completed. Continue application.');
+        return redirect()
+            ->route('application.index')
+            ->with('success', 'Personal details saved successfully.');
     }
 
-    /**
-     * STEP 2 - DOCUMENTS UPLOAD
-     */
-    public function storeStep2(Request $request)
+    public function step3(Request $request)
     {
         $request->validate([
-            'ni_number' => 'nullable',
-            'passport' => 'nullable|file',
-            'dbs' => 'nullable|file',
+            'employment_type' => 'required',
+            'start_date' => 'required|date',
+            'availability' => 'nullable|string',
+
+            'primary_role' => 'required|string',
+
+            'skills' => 'nullable|array',
+            'skills.*' => 'exists:skills,id',
         ]);
 
-        $user = Auth::user();
+        $user = auth()->user();
+        $employee = $user->employee;
 
-        $employee = Employee::where('user_id', $user->id)->first();
+        /*
+        |--------------------------------------------------------------------------
+        | UPDATE EMPLOYEE CORE INFO
+        |--------------------------------------------------------------------------
+        */
 
-        // SAVE DOCUMENTS
-        if ($request->hasFile('passport')) {
-            $passportPath = $request->file('passport')->store('documents');
-        }
-
-        if ($request->hasFile('dbs')) {
-            $dbsPath = $request->file('dbs')->store('documents');
-        }
-
-        EmployeeDocument::create([
-            'employee_id' => $employee->id,
-            'passport' => $passportPath ?? null,
-            'dbs' => $dbsPath ?? null,
+        $employee->update([
+            'employment_type' => $request->employment_type,
+            'start_date' => $request->start_date,
+            'primary_role' => $request->primary_role,
         ]);
 
-        // UPDATE STEP
+        /*
+        |--------------------------------------------------------------------------
+        | STORE ROLE DETAIL (STEP 4 PREP)
+        |--------------------------------------------------------------------------
+        */
+
+        EmployeeRoleDetail::updateOrCreate(
+            [
+                'employee_id' => $employee->id,
+            ],
+            [
+                'role_type' => $request->primary_role,
+                'data' => [
+                    'availability' => $request->availability,
+                ]
+            ]
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | ATTACH SKILLS (MANY TO MANY)
+        |--------------------------------------------------------------------------
+        */
+
+        if ($request->filled('skills')) {
+            $employee->skills()->sync($request->skills);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | ADVANCE STEP
+        |--------------------------------------------------------------------------
+        */
+
         $user->update([
             'registration_step' => 4
         ]);
 
-        return redirect()->route('complete.application')
-            ->with('success', 'Documents uploaded successfully.');
+        return redirect()
+            ->route('application.index')
+            ->with('success', 'Employment details saved successfully.');
     }
+
+    public function step4(Request $request)
+    {
+        $request->validate([
+            'role_data' => 'nullable|array',
+            'badge' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+        ]);
+
+        $user = auth()->user();
+        $employee = $user->employee;
+
+        /*
+        |--------------------------------------------------------------------------
+        | ROLE DATA ARRAY
+        |--------------------------------------------------------------------------
+        */
+
+        $roleData = $request->role_data ?? [];
+
+        /*
+        |--------------------------------------------------------------------------
+        | HANDLE SIA BADGE UPLOAD
+        |--------------------------------------------------------------------------
+        */
+
+        if ($request->hasFile('badge')) {
+
+            $roleData['badge'] = $request->file('badge')
+                ->store('employee/badges', 'public');
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | SAVE ROLE DATA
+        |--------------------------------------------------------------------------
+        */
+
+        EmployeeRoleDetail::updateOrCreate(
+            [
+                'employee_id' => $employee->id,
+            ],
+            [
+                'role_type' => $employee->primary_role,
+                'data' => $roleData,
+            ]
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | NEXT STEP
+        |--------------------------------------------------------------------------
+        */
+
+        $user->update([
+            'registration_step' => 5
+        ]);
+
+        return redirect()
+            ->route('application.index')
+            ->with('success', 'Role details saved successfully.');
+    }
+
+    public function step5(Request $request)
+    {
+        $request->validate([
+            'bank_name' => 'required|string|max:255',
+            'account_number' => 'required|string|max:50',
+            'sort_code' => 'required|string|max:20',
+            'utr' => 'nullable|string|max:50',
+            'payment_type' => 'required|in:PAYE,Self-Employed',
+        ]);
+
+        $user = auth()->user();
+        $employee = $user->employee;
+
+        /*
+        |--------------------------------------------------------------------------
+        | SAVE PAYROLL DATA
+        |--------------------------------------------------------------------------
+        */
+
+        EmployeePayroll::updateOrCreate(
+            [
+                'employee_id' => $employee->id,
+            ],
+            [
+                'bank_name' => $request->bank_name,
+                'account_number' => $request->account_number,
+                'sort_code' => $request->sort_code,
+                'utr' => $request->utr,
+                'payment_type' => $request->payment_type,
+            ]
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | ADVANCE STEP
+        |--------------------------------------------------------------------------
+        */
+
+        $user->update([
+            'registration_step' => 6
+        ]);
+
+        return redirect()
+            ->route('application.index')
+            ->with('success', 'Payroll details saved successfully.');
+    }
+
+    public function step6(Request $request)
+    {
+        $request->validate([
+            'passport' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'ni_proof' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'dbs' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'sia_license' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'certificates' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+        ]);
+
+        $employee = auth()->user()->employee;
+
+        /*
+        |--------------------------------------------------------------------------
+        | DOCUMENT TYPES MAP
+        |--------------------------------------------------------------------------
+        */
+
+        $documents = [
+            'passport' => 'Passport',
+            'ni_proof' => 'NI Proof',
+            'dbs' => 'DBS',
+            'sia_license' => 'SIA Licence',
+            'certificates' => 'Certificates',
+        ];
+
+        /*
+        |--------------------------------------------------------------------------
+        | LOOP & STORE DOCUMENTS
+        |--------------------------------------------------------------------------
+        */
+
+        foreach ($documents as $field => $type) {
+
+            if (request()->hasFile($field)) {
+
+                $path = request()->file($field)
+                    ->store('employee/documents', 'public');
+
+                EmployeeDocument::updateOrCreate(
+                    [
+                        'employee_id' => $employee->id,
+                        'document_type' => $type,
+                    ],
+                    [
+                        'file_path' => $path,
+                        'verification_status' => 'Pending',
+                    ]
+                );
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | COMPLETE ONBOARDING
+        |--------------------------------------------------------------------------
+        */
+
+        auth()->user()->update([
+            'registration_step' => 7,
+            'status' => 'active'
+        ]);
+
+        return redirect()
+            ->route('application.index')
+            ->with('success', 'Documents uploaded successfully. Your application is under review,
+             you can logout of the application.');
+    }
+
+    public function editStep($step)
+    {
+        $user = auth()->user();
+        $employee = $user->employee;
+
+        if ($user->status !== 'pending') {
+            return redirect()->route('application.index')
+                ->with('error', 'Your application is locked after approval.');
+        }
+
+        return view('applicant.application', compact('step', 'employee'));
+    }
+
 }

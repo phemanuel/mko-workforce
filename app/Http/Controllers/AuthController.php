@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Role;
+use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -31,12 +32,12 @@ class AuthController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
+            'phone_no' => 'required|string|max:20',
             'email' => 'required|email',
             'password' => 'required|confirmed|min:6',
         ]);
 
-        // CHECK IF USER ALREADY EXISTS
+        // CHECK IF USER EXISTS
         $existingUser = User::where('email', $request->email)->first();
 
         /*
@@ -47,12 +48,14 @@ class AuthController extends Controller
 
         if ($existingUser && !$existingUser->email_verified_at) {
 
-            // RESEND VERIFICATION EMAIL
+            Auth::login($existingUser);
+
             $existingUser->sendEmailVerificationNotification();
 
             return redirect()->route('email.verify')
-                ->with('success',
-                    'You already started registration. Verification email has been resent.'
+                ->with(
+                    'success',
+                    'You already started registration. Verification email resent.'
                 );
         }
 
@@ -71,18 +74,36 @@ class AuthController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | CREATE NEW USER
+        | CREATE USER
         |--------------------------------------------------------------------------
         */
 
         $user = User::create([
             'name' => $request->name,
-            'phone' => $request->phone,
+            'phone_no' => $request->phone_no,
             'email' => $request->email,
-            'role_id' => 3, // STAFF
+            'role_id' => 3,
             'registration_step' => 1,
             'status' => 'pending',
             'password' => Hash::make($request->password),
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | LOGIN USER
+        |--------------------------------------------------------------------------
+        */
+
+        Auth::login($user);
+
+        /*
+        |--------------------------------------------------------------------------
+        | CREATE EMPLOYEE RECORD
+        |--------------------------------------------------------------------------
+        */
+
+        Employee::create([
+            'user_id' => $user->id,
         ]);
 
         /*
@@ -94,7 +115,8 @@ class AuthController extends Controller
         $user->sendEmailVerificationNotification();
 
         return redirect()->route('email.verify')
-            ->with('success',
+            ->with(
+                'success',
                 'Verification email sent successfully. Please check your inbox.'
             );
     }
@@ -164,7 +186,7 @@ class AuthController extends Controller
 
         if ($user->registration_step == 2) {
 
-            return redirect()->route('application.form')
+            return redirect()->route('complete.application')
                 ->with('success',
                     'Please complete your application form.'
                 );
@@ -179,7 +201,7 @@ class AuthController extends Controller
 
         if ($user->registration_step == 3) {
 
-            return redirect()->route('application.form')
+            return redirect()->route('complete.application')
                 ->with('success',
                     'Continue your application.'
                 );

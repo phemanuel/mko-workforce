@@ -18,6 +18,7 @@
     }
 </style>
     </style>
+    <link href="{{asset('login/favicon.png')}}" rel="shortcut icon" type="image/png">
 </head>
 
 <body class="bg-gray-100 font-sans">

@@ -20,7 +20,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
-        'phone',
+        'phone_no',
         'email',
         'password',
         'role_id',
@@ -50,11 +50,6 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-
-    public function role()
-    {
-        return $this->belongsTo(Role::class);
-    }    
 
     public function employee()
     {
