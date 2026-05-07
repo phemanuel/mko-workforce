@@ -147,7 +147,7 @@ class AuthController extends Controller
             // RESEND VERIFICATION EMAIL
             $user->sendEmailVerificationNotification();
 
-            Auth::logout();
+            // Auth::logout();
 
             return redirect()->route('email.verify')
                 ->with('success',

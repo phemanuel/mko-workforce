@@ -4,24 +4,58 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\DashboardController;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use App\Http\Controllers\EmailVerificationController;
+use App\Http\Controllers\ApplicationController;
 
 
-    Route::get('/email/verify', function () {
-        return view('auth.email_verify');
-    })->middleware('auth')->name('email.verify');
 
-    Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
-        $request->fulfill();
+    /*
+|--------------------------------------------------------------------------
+| SHOW EMAIL VERIFY PAGE
+|--------------------------------------------------------------------------
+*/
+Route::get('/email/verify', function () {
+    return view('auth.email_verify');
+})->middleware('auth')->name('email.verify');
 
-        return redirect('/complete-application');
-    })->middleware(['auth', 'signed'])->name('verification.verify');
+/*
+|--------------------------------------------------------------------------
+| HANDLE EMAIL VERIFICATION LINK CLICK
+|--------------------------------------------------------------------------
+*/
+Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+    ->middleware(['auth', 'signed'])
+    ->name('verification.verify');
 
-    Route::post('/email/verification-notification', function (Request $request) {
-        $request->user()->sendEmailVerificationNotification();
+    Route::get('/complete-application', function () {
+    return view('application.form');
+})->middleware('auth')->name('complete.application');
 
-        return back()->with('message', 'Verification link sent!');
-    })->middleware(['auth', 'throttle:6,1'])->name('verification.send');
+/*
+|--------------------------------------------------------------------------
+| RESEND VERIFICATION EMAIL
+|--------------------------------------------------------------------------
+*/
+Route::post('/email/verification-notification', function (Request $request) {
+
+    $request->user()->sendEmailVerificationNotification();
+
+    return back()->with('message', 'Verification link sent!');
+})
+->middleware(['auth', 'throttle:6,1'])
+->name('verification.send');
+
+Route::get('/complete-application', [ApplicationController::class, 'index'])
+    ->middleware('auth')
+    ->name('complete.application');
+
+Route::post('/complete-application/step-1', [ApplicationController::class, 'storeStep1'])
+    ->middleware('auth')
+    ->name('application.step1');
+
+Route::post('/complete-application/step-2', [ApplicationController::class, 'storeStep2'])
+    ->middleware('auth')
+    ->name('application.step2');
 
     // ------------------------------------------------------------
 
