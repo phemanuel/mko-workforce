@@ -21,6 +21,11 @@ class Employee extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function documents()
+    {
+        return $this->hasMany(EmployeeDocument::class);
+    }
+
     public function profile()
     {
         return $this->hasOne(EmployeeProfile::class);
@@ -44,5 +49,12 @@ class Employee extends Model
     public function skills()
     {
         return $this->belongsToMany(Skill::class);
+    }
+
+    public function isCompliant()
+    {
+        return $this->documents()
+            ->where('status', '!=', 'approved')
+            ->count() === 0;
     }
 }

@@ -122,163 +122,139 @@ class AuthController extends Controller
     }
 
     public function loginAction(Request $request)
-    {
-        /*
-        |--------------------------------------------------------------------------
-        | VALIDATE INPUT
-        |--------------------------------------------------------------------------
-        */
+{
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDATE INPUT
+    |--------------------------------------------------------------------------
+    */
+    $credentials = $request->validate([
+        'email' => ['required', 'email'],
+        'password' => ['required'],
+    ]);
 
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required'],
+    /*
+    |--------------------------------------------------------------------------
+    | ATTEMPT LOGIN (ALWAYS REQUIRED)
+    |--------------------------------------------------------------------------
+    */
+    if (!Auth::attempt($credentials)) {
+
+        return back()->withErrors([
+            'error' => 'Invalid login details.',
         ]);
+    }
+
+    $request->session()->regenerate();
+
+    $user = Auth::user();
+
+    /*
+    |--------------------------------------------------------------------------
+    | ADMIN & SUPERVISOR FLOW (ROLE 1 & 2)
+    |--------------------------------------------------------------------------
+    | Still authenticated users, but skip onboarding checks
+    |--------------------------------------------------------------------------
+    */
+    if (in_array($user->role_id, [1, 2])) {
+
+        return redirect()->route('dashboard');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | STAFF FLOW (ROLE 3 ONLY)
+    |--------------------------------------------------------------------------
+    */
+    if ($user->role_id == 3) {
 
         /*
-        |--------------------------------------------------------------------------
-        | ATTEMPT LOGIN
-        |--------------------------------------------------------------------------
+        |--------------------------------------------------------------
+        | EMAIL NOT VERIFIED
+        |--------------------------------------------------------------
         */
-
-        if (!Auth::attempt($credentials)) {
-
-            return back()->withErrors([
-                'error' => 'Invalid login details.',
-            ]);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | USER LOGGED IN
-        |--------------------------------------------------------------------------
-        */
-
-        $request->session()->regenerate();
-
-        $user = Auth::user();
-
-        /*
-        |--------------------------------------------------------------------------
-        | STEP 1
-        | ACCOUNT CREATED BUT EMAIL NOT VERIFIED
-        |--------------------------------------------------------------------------
-        */
-
         if ($user->registration_step == 1) {
 
-            // RESEND VERIFICATION EMAIL
             $user->sendEmailVerificationNotification();
 
-            // Auth::logout();
+            Auth::logout();
 
             return redirect()->route('email.verify')
-                ->with('success',
-                    'Your email is not verified yet. A new verification email has been sent.'
-                );
+                ->with('success', 'Please verify your email.');
         }
 
         /*
-        |--------------------------------------------------------------------------
-        | STEP 2
-        | EMAIL VERIFIED - COMPLETE APPLICATION
-        |--------------------------------------------------------------------------
+        |--------------------------------------------------------------
+        | COMPLETED BUT NOT APPROVED
+        |--------------------------------------------------------------
         */
-
-        if ($user->registration_step == 2) {
-
-            return redirect()->route('complete.application')
-                ->with('success',
-                    'Please complete your application form.'
-                );
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | STEP 3
-        | APPLICATION STARTED BUT NOT SUBMITTED
-        |--------------------------------------------------------------------------
-        */
-
-        if ($user->registration_step == 3) {
-
-            return redirect()->route('complete.application')
-                ->with('success',
-                    'Continue your application.'
-                );
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | STEP 4
-        | APPLICATION SUBMITTED
-        |--------------------------------------------------------------------------
-        */
-
-        if ($user->registration_step == 4) {
+        if ($user->status === 'active' && $user->approval_status === 'pending') {
 
             Auth::logout();
 
             return back()->withErrors([
-                'error' => 'Your application has been submitted and is awaiting review.'
+                'error' => 'Your application is awaiting admin approval.'
             ]);
         }
 
         /*
-        |--------------------------------------------------------------------------
-        | STEP 5
-        | UNDER REVIEW
-        |--------------------------------------------------------------------------
+        |--------------------------------------------------------------
+        | REJECTED
+        |--------------------------------------------------------------
         */
-
-        if ($user->registration_step == 5) {
+        if ($user->approval_status === 'rejected') {
 
             Auth::logout();
 
             return back()->withErrors([
-                'error' => 'Your application is currently under review.'
+                'error' => 'Your application was not approved.'
             ]);
         }
 
         /*
-        |--------------------------------------------------------------------------
-        | STEP 6
-        | APPROVED USERS
-        |--------------------------------------------------------------------------
+        |--------------------------------------------------------------
+        | APPROVED STAFF
+        |--------------------------------------------------------------
         */
-
-        if ($user->registration_step == 6) {
+        if ($user->approval_status === 'approved') {
 
             return redirect()->route('dashboard');
         }
 
         /*
-        |--------------------------------------------------------------------------
-        | STEP 7
-        | REJECTED USERS
-        |--------------------------------------------------------------------------
+        |--------------------------------------------------------------
+        | ONBOARDING IN PROGRESS
+        |--------------------------------------------------------------
         */
+        if ($user->registration_step >= 2 && $user->registration_step < 6) {
 
-        if ($user->registration_step == 7) {
-
-            Auth::logout();
-
-            return back()->withErrors([
-                'error' => 'Your application was not approved. Please contact support.'
-            ]);
+            return redirect()->route('complete.application')
+                ->with('success', 'Please continue your application.');
         }
 
         /*
-        |--------------------------------------------------------------------------
-        | FALLBACK
-        |--------------------------------------------------------------------------
+        |--------------------------------------------------------------
+        | FALLBACK SAFETY
+        |--------------------------------------------------------------
         */
-
         Auth::logout();
 
         return back()->withErrors([
-            'error' => 'Unable to determine account status.'
+            'error' => 'Unable to determine application status.'
         ]);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | UNKNOWN ROLE SAFETY
+    |--------------------------------------------------------------------------
+    */
+    Auth::logout();
+
+    return back()->withErrors([
+        'error' => 'Unauthorized role detected.'
+    ]);
+}
     /**
      * LOGOUT USER
      */

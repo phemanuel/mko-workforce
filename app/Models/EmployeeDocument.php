@@ -11,12 +11,19 @@ class EmployeeDocument extends Model
         'document_type',
         'file_path',
         'expiry_date',
-        'verification_status',
+        'status',
+        'rejection_reason',
+        'verified_at',
         'verified_by',
     ];
 
     public function employee()
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function verifier()
+    {
+        return $this->belongsTo(User::class, 'verified_by');
     }
 }

@@ -26,6 +26,7 @@ class User extends Authenticatable
         'role_id',
         'status',
         'registration_step',
+        'approval_status',
     ];
 
     /**

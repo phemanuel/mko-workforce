@@ -6,6 +6,8 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\ApplicationController;
+use App\Http\Controllers\AdminApplicationController;
+use App\Http\Controllers\AdminReviewController;
 
 
 
@@ -91,11 +93,27 @@ use App\Http\Controllers\ApplicationController;
         
         Route::get('/application/edit/{step}', [ApplicationController::class, 'editStep'])
         ->name('application.edit.step');
-    });
+    });    
 
-    Route::middleware(['auth', 'approved'])->group(function () {
+    Route::prefix('admin')->middleware(['auth', 'approved'])->group(function () {
 
         Route::get('/dashboard', [DashboardController::class, 'index'])
-        ->name('dashboard');        
+        ->name('dashboard');  
 
-});
+        Route::get('/applications', [AdminReviewController::class, 'index'])
+        ->name('admin.applications');
+
+        Route::get('/applications/{id}', [AdminReviewController::class, 'show'])
+            ->name('admin.applications.show');
+
+        Route::post('/documents/{id}/approved', [AdminReviewController::class, 'approveDocument']);
+        Route::post('/documents/{id}/rejected', [AdminReviewController::class, 'rejectDocument']);
+
+        Route::post('/applications/{id}/approve', [AdminReviewController::class, 'approve'])
+            ->name('admin.applications.approve');
+
+        Route::post('/applications/{id}/reject', [AdminReviewController::class, 'reject'])
+            ->name('admin.applications.reject');
+
+    });
+    

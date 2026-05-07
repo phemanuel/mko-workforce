@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class CheckUserApproved
@@ -17,7 +18,7 @@ class CheckUserApproved
     {
         if (auth()->check()) {
 
-            if (auth()->user()->status !== 'approved') {
+            if (auth()->user()->approval_status !== 'approved') {
 
                 Auth::logout();
 

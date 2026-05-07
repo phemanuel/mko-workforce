@@ -76,6 +76,13 @@ class ApplicationController extends Controller
 
     public function step2(Request $request)
     {
+        $user = auth()->user();
+
+        if ($user->registration_step > 2) {
+            return redirect()->route('application.index')
+                ->with('error', 'This step is locked. Contact admin for changes.');
+        }
+
         $request->validate([
 
             // Personal Details
@@ -176,6 +183,11 @@ class ApplicationController extends Controller
 
     public function step3(Request $request)
     {
+        if ($user->registration_step > 3) {
+            return redirect()->route('application.index')
+                ->with('error', 'This step is locked. Contact admin for changes.');
+        }
+        
         $request->validate([
             'employment_type' => 'required',
             'start_date' => 'required|date',
@@ -247,6 +259,11 @@ class ApplicationController extends Controller
 
     public function step4(Request $request)
     {
+        if ($user->registration_step > 4) {
+            return redirect()->route('application.index')
+                ->with('error', 'This step is locked. Contact admin for changes.');
+        }
+        
         $request->validate([
             'role_data' => 'nullable|array',
             'badge' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
@@ -308,6 +325,11 @@ class ApplicationController extends Controller
 
     public function step5(Request $request)
     {
+        if ($user->registration_step > 5) {
+            return redirect()->route('application.index')
+                ->with('error', 'This step is locked. Contact admin for changes.');
+        }
+        
         $request->validate([
             'bank_name' => 'required|string|max:255',
             'account_number' => 'required|string|max:50',
@@ -355,6 +377,11 @@ class ApplicationController extends Controller
 
     public function step6(Request $request)
     {
+        if ($user->registration_step > 6) {
+            return redirect()->route('application.index')
+                ->with('error', 'This step is locked. Contact admin for changes.');
+        }
+        
         $request->validate([
             'passport' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'ni_proof' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
@@ -413,7 +440,8 @@ class ApplicationController extends Controller
 
         auth()->user()->update([
             'registration_step' => 7,
-            'status' => 'active'
+            'status' => 'active',
+            'approval_status' => 'pending'
         ]);
 
         return redirect()

@@ -1,7 +1,5 @@
 @extends('layouts.admin')
 
-<!-- @section('page-title', 'Admin Dashboard') -->
-
 @section('content')
 
 <!-- KPI GRID -->
@@ -9,25 +7,25 @@
 
     <div class="bg-white p-5 rounded-lg shadow border-l-4 border-black">
         <p class="text-sm text-gray-500">Total Employees</p>
-        <h2 class="text-2xl font-bold">128</h2>
+        <h2 class="text-2xl font-bold">{{ $totalEmployees }}</h2>
         <p class="text-xs text-gray-400 mt-1">All registered staff</p>
     </div>
 
     <div class="bg-white p-5 rounded-lg shadow border-l-4 border-blue-600">
-        <p class="text-sm text-gray-500">Active Shifts</p>
-        <h2 class="text-2xl font-bold">34</h2>
-        <p class="text-xs text-gray-400 mt-1">Currently running</p>
+        <p class="text-sm text-gray-500">Active Employees</p>
+        <h2 class="text-2xl font-bold">{{ $activeEmployees }}</h2>
+        <p class="text-xs text-gray-400 mt-1">Currently active staff</p>
     </div>
 
     <div class="bg-white p-5 rounded-lg shadow border-l-4 border-red-600">
         <p class="text-sm text-gray-500">Pending Approvals</p>
-        <h2 class="text-2xl font-bold text-red-600">12</h2>
+        <h2 class="text-2xl font-bold text-red-600">{{ $pendingApprovals }}</h2>
         <p class="text-xs text-gray-400 mt-1">Requires action</p>
     </div>
 
     <div class="bg-white p-5 rounded-lg shadow border-l-4 border-yellow-500">
         <p class="text-sm text-gray-500">Compliance Alerts</p>
-        <h2 class="text-2xl font-bold text-yellow-600">5</h2>
+        <h2 class="text-2xl font-bold text-yellow-600">{{ $complianceAlerts }}</h2>
         <p class="text-xs text-gray-400 mt-1">Expiring documents</p>
     </div>
 
@@ -45,24 +43,25 @@
 
         <div class="space-y-4 text-sm">
 
+            <!-- PLACEHOLDER (we can make this dynamic later) -->
             <div class="flex justify-between border-b pb-2">
-                <span>✔ New employee registered</span>
-                <span class="text-gray-400">John Doe</span>
+                <span>✔ New employee registration</span>
+                <span class="text-gray-400">Latest onboarding</span>
             </div>
 
             <div class="flex justify-between border-b pb-2">
-                <span>⚠ DBS expiring soon</span>
-                <span class="text-yellow-600">3 staff</span>
+                <span>⚠ Compliance alert triggered</span>
+                <span class="text-yellow-600">System</span>
             </div>
 
             <div class="flex justify-between border-b pb-2">
-                <span>✔ Shift approved</span>
-                <span class="text-gray-400">Site A</span>
+                <span>✔ Shift activity recorded</span>
+                <span class="text-gray-400">Operations</span>
             </div>
 
             <div class="flex justify-between">
-                <span>⚠ Late check-in flagged</span>
-                <span class="text-red-600">Site C</span>
+                <span>⚠ Incident flagged</span>
+                <span class="text-red-600">Supervisor</span>
             </div>
 
         </div>
@@ -83,9 +82,9 @@
                 Manage Employees
             </a>
 
-            <a href="/admin/shifts"
+            <a href="/admin/applications"
                class="block bg-red-600 text-white text-center py-2 rounded hover:bg-red-700">
-                Create Shift
+                Review Applications
             </a>
 
             <a href="/admin/compliance"
@@ -94,6 +93,53 @@
             </a>
 
         </div>
+
+    </div>
+
+</div>
+
+<!-- APPLICATION QUEUE (NEW FEATURE) -->
+<div class="mt-6 bg-white p-6 rounded-lg shadow">
+
+    <h3 class="font-semibold text-gray-700 mb-4">
+        Recent Applications
+    </h3>
+
+    <div class="space-y-3">
+
+        @forelse($applications as $app)
+
+            <div class="flex items-center justify-between border-b pb-3">
+
+                <!-- NAME + EMAIL -->
+                <div>
+                    <p class="font-medium">{{ $app->name }}</p>
+                    <p class="text-xs text-gray-500">
+                        Step {{ $app->registration_step }} • {{ $app->email }}
+                    </p>
+                </div>
+
+                <!-- STATUS -->
+                <div>
+                    <span class="px-2 py-1 text-xs rounded
+                        {{ $app->status == 'active'
+                            ? 'bg-green-100 text-green-600'
+                            : 'bg-yellow-100 text-yellow-600' }}">
+                        {{ ucfirst($app->status) }}
+                    </span>
+                </div>
+
+                <!-- ACTION -->
+                <a href="/admin/applications/{{ $app->id }}"
+                   class="text-blue-600 text-sm underline">
+                    View
+                </a>
+
+            </div>
+
+        @empty
+            <p class="text-sm text-gray-500">No recent applications.</p>
+        @endforelse
 
     </div>
 
