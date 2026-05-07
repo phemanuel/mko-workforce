@@ -112,10 +112,31 @@
                 {{ $roleDetail->role_type ?? 'N/A' }}
             </p>
 
-            <!-- <p>
-                <span class="font-medium">Secondary Skills:</span>
-                {{ $roleDetail->secondary_skills ?? 'N/A' }}
-            </p> -->
+            <div class="mt-4">
+
+                <p class="text-xs text-gray-400 mb-2">
+                    Secondary Skills
+                </p>
+
+                <div class="flex flex-wrap gap-2">
+
+                    @forelse(($roleDetail->secondary_skills ?? []) as $skill)
+
+                        <span class="px-3 py-1 rounded-full bg-black text-white text-xs">
+                            {{ $skill }}
+                        </span>
+
+                    @empty
+
+                        <span class="text-sm text-gray-500">
+                            No secondary skills selected
+                        </span>
+
+                    @endforelse
+
+                </div>
+
+            </div>
         </div>
 
         <!-- DYNAMIC ROLE FIELDS -->

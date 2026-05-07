@@ -177,7 +177,7 @@ class AuthController extends Controller
 
             $user->sendEmailVerificationNotification();
 
-            Auth::logout();
+            // Auth::logout();
 
             return redirect()->route('email.verify')
                 ->with('success', 'Please verify your email.');

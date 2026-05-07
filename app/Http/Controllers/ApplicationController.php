@@ -183,6 +183,9 @@ class ApplicationController extends Controller
 
     public function step3(Request $request)
     {
+
+        $user = auth()->user();
+
         if ($user->registration_step > 3) {
             return redirect()->route('application.index')
                 ->with('error', 'This step is locked. Contact admin for changes.');
@@ -194,12 +197,13 @@ class ApplicationController extends Controller
             'availability' => 'nullable|string',
 
             'primary_role' => 'required|string',
+            'secondary_skills' => 'nullable|array',
 
             'skills' => 'nullable|array',
             'skills.*' => 'exists:skills,id',
         ]);
 
-        $user = auth()->user();
+        
         $employee = $user->employee;
 
         /*
@@ -222,10 +226,11 @@ class ApplicationController extends Controller
 
         EmployeeRoleDetail::updateOrCreate(
             [
-                'employee_id' => $employee->id,
+                'employee_id' => $employee->id,                
             ],
             [
-                'role_type' => $request->primary_role,
+                'role_type' => $request->primary_role,   
+                'secondary_skills' => $request->secondary_skills,             
                 'data' => [
                     'availability' => $request->availability,
                 ]
@@ -259,6 +264,8 @@ class ApplicationController extends Controller
 
     public function step4(Request $request)
     {
+        $user = auth()->user();
+
         if ($user->registration_step > 4) {
             return redirect()->route('application.index')
                 ->with('error', 'This step is locked. Contact admin for changes.');
@@ -269,7 +276,7 @@ class ApplicationController extends Controller
             'badge' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
-        $user = auth()->user();
+        
         $employee = $user->employee;
 
         /*
@@ -304,7 +311,7 @@ class ApplicationController extends Controller
             ],
             [
                 'role_type' => $employee->primary_role,
-                'data' => $roleData,
+                'data1' => $roleData,
             ]
         );
 
@@ -325,6 +332,8 @@ class ApplicationController extends Controller
 
     public function step5(Request $request)
     {
+        $user = auth()->user();
+
         if ($user->registration_step > 5) {
             return redirect()->route('application.index')
                 ->with('error', 'This step is locked. Contact admin for changes.');
@@ -338,7 +347,7 @@ class ApplicationController extends Controller
             'payment_type' => 'required|in:PAYE,Self-Employed',
         ]);
 
-        $user = auth()->user();
+        
         $employee = $user->employee;
 
         /*
@@ -377,6 +386,8 @@ class ApplicationController extends Controller
 
     public function step6(Request $request)
     {
+        $user = auth()->user();
+
         if ($user->registration_step > 6) {
             return redirect()->route('application.index')
                 ->with('error', 'This step is locked. Contact admin for changes.');

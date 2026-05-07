@@ -345,16 +345,48 @@
 
             <div class="grid grid-cols-2 gap-2 mb-4">
 
-                @foreach(\App\Models\Skill::all() as $skill)
+                <!-- SECONDARY SKILLS -->
+<div class="mt-6">
 
-                    <label class="flex items-center space-x-2">
-                        <input type="checkbox"
-                            name="skills[]"
-                            value="{{ $skill->id }}">
-                        <span>{{ $skill->name }}</span>
-                    </label>
+    <label class="block text-sm font-semibold text-gray-700 mb-3">
+        Secondary Skills
+    </label>
 
-                @endforeach
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+        @php
+            $skills = [
+                'SIA Licensed',
+                'Door Supervisor',
+                'CCTV Operator',
+                'Cleaning Commercial',
+                'Cleaning Residential',
+                'Care Support Work',
+                'Admin Support',
+                'Logistics Support',
+            ];
+        @endphp
+
+        @foreach($skills as $skill)
+
+            <label class="flex items-center gap-2 border rounded-lg p-3 hover:bg-gray-50 cursor-pointer">
+
+                <input type="checkbox"
+                       name="secondary_skills[]"
+                       value="{{ $skill }}"
+                       class="rounded border-gray-300 text-red-600 focus:ring-red-500">
+
+                <span class="text-sm text-gray-700">
+                    {{ $skill }}
+                </span>
+
+            </label>
+
+        @endforeach
+
+    </div>
+
+</div>
 
             </div>
 

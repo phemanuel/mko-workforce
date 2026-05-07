@@ -20,8 +20,9 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->string('role_type');
-
+            $table->text('secondary_skills');
             $table->json('data')->nullable();
+            $table->json('data1')->nullable();
 
             $table->timestamps();
         });
