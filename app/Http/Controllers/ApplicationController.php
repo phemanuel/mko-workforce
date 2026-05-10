@@ -455,6 +455,12 @@ class ApplicationController extends Controller
             'approval_status' => 'pending'
         ]);
 
+        log_activity(
+            'employee_registered',
+            'New employee registration',
+            $user->name . ' completed online registration, pending review.'
+        );
+
         return redirect()
             ->route('application.index')
             ->with('success', 'Documents uploaded successfully. Your application is under review,

@@ -122,145 +122,162 @@ class AuthController extends Controller
     }
 
     public function loginAction(Request $request)
-{
-    /*
-    |--------------------------------------------------------------------------
-    | VALIDATE INPUT
-    |--------------------------------------------------------------------------
-    */
-    $credentials = $request->validate([
-        'email' => ['required', 'email'],
-        'password' => ['required'],
-    ]);
-
-    /*
-    |--------------------------------------------------------------------------
-    | ATTEMPT LOGIN (ALWAYS REQUIRED)
-    |--------------------------------------------------------------------------
-    */
-    if (!Auth::attempt($credentials)) {
-
-        return back()->withErrors([
-            'error' => 'Invalid login details.',
+    {
+        /*
+        |--------------------------------------------------------------------------
+        | VALIDATE INPUT
+        |--------------------------------------------------------------------------
+        */
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
         ]);
-    }
-
-    $request->session()->regenerate();
-
-    $user = Auth::user();
-
-    /*
-    |--------------------------------------------------------------------------
-    | ADMIN & SUPERVISOR FLOW (ROLE 1 & 2)
-    |--------------------------------------------------------------------------
-    | Still authenticated users, but skip onboarding checks
-    |--------------------------------------------------------------------------
-    */
-    if (in_array($user->role_id, [1, 2])) {
-
-        return redirect()->route('dashboard');
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | STAFF FLOW (ROLE 3 ONLY)
-    |--------------------------------------------------------------------------
-    */
-    if ($user->role_id == 3) {
 
         /*
-        |--------------------------------------------------------------
-        | EMAIL NOT VERIFIED
-        |--------------------------------------------------------------
+        |--------------------------------------------------------------------------
+        | ATTEMPT LOGIN (ALWAYS REQUIRED)
+        |--------------------------------------------------------------------------
         */
-        if ($user->registration_step == 1) {
-
-            $user->sendEmailVerificationNotification();
-
-            // Auth::logout();
-
-            return redirect()->route('email.verify')
-                ->with('success', 'Please verify your email.');
-        }
-
-        /*
-        |--------------------------------------------------------------
-        | COMPLETED BUT NOT APPROVED
-        |--------------------------------------------------------------
-        */
-        if ($user->status === 'active' && $user->approval_status === 'pending') {
-
-            Auth::logout();
+        if (!Auth::attempt($credentials)) {
 
             return back()->withErrors([
-                'error' => 'Your application is awaiting admin approval.'
+                'error' => 'Invalid login details.',
             ]);
         }
 
-        /*
-        |--------------------------------------------------------------
-        | REJECTED
-        |--------------------------------------------------------------
-        */
-        if ($user->approval_status === 'rejected') {
+        $request->session()->regenerate();
 
-            Auth::logout();
-
-            return back()->withErrors([
-                'error' => 'Your application was not approved.'
-            ]);
-        }
+        $user = Auth::user();
 
         /*
-        |--------------------------------------------------------------
-        | APPROVED STAFF
-        |--------------------------------------------------------------
+        |--------------------------------------------------------------------------
+        | ADMIN & SUPERVISOR FLOW (ROLE 1 & 2)
+        |--------------------------------------------------------------------------
+        | Still authenticated users, but skip onboarding checks
+        |--------------------------------------------------------------------------
         */
-        if ($user->approval_status === 'approved') {
+        if (in_array($user->role_id, [1, 2])) {
+
+        log_activity(
+            'employee_login',
+            'Employee login',
+            $user->name . '-' . $user->role_id . " successfully login"
+        );
 
             return redirect()->route('dashboard');
         }
 
         /*
-        |--------------------------------------------------------------
-        | ONBOARDING IN PROGRESS
-        |--------------------------------------------------------------
+        |--------------------------------------------------------------------------
+        | STAFF FLOW (ROLE 3 ONLY)
+        |--------------------------------------------------------------------------
         */
-        if ($user->registration_step >= 2 && $user->registration_step < 6) {
+        if ($user->role_id == 3) {
 
-            return redirect()->route('complete.application')
-                ->with('success', 'Please continue your application.');
+            /*
+            |--------------------------------------------------------------
+            | EMAIL NOT VERIFIED
+            |--------------------------------------------------------------
+            */
+            if ($user->registration_step == 1) {
+
+                $user->sendEmailVerificationNotification();
+
+                // Auth::logout();
+
+                return redirect()->route('email.verify')
+                    ->with('success', 'Please verify your email.');
+            }
+
+            /*
+            |--------------------------------------------------------------
+            | COMPLETED BUT NOT APPROVED
+            |--------------------------------------------------------------
+            */
+            if ($user->status === 'active' && $user->approval_status === 'pending') {
+
+                Auth::logout();
+
+                return back()->withErrors([
+                    'error' => 'Your application is awaiting admin approval.'
+                ]);
+            }
+
+            /*
+            |--------------------------------------------------------------
+            | REJECTED
+            |--------------------------------------------------------------
+            */
+            if ($user->approval_status === 'rejected') {
+
+                Auth::logout();
+
+                return back()->withErrors([
+                    'error' => 'Your application was not approved.'
+                ]);
+            }
+
+            /*
+            |--------------------------------------------------------------
+            | APPROVED STAFF
+            |--------------------------------------------------------------
+            */
+            if ($user->approval_status === 'approved') {
+                log_activity(
+                    'staff_login',
+                    'Staff login',
+                    $user->name . '-' . $user->role_id . " successfully login"
+                );
+
+                return redirect()->route('dashboard');
+            }
+
+            /*
+            |--------------------------------------------------------------
+            | ONBOARDING IN PROGRESS
+            |--------------------------------------------------------------
+            */
+            if ($user->registration_step >= 2 && $user->registration_step < 6) {
+
+                return redirect()->route('complete.application')
+                    ->with('success', 'Please continue your application.');
+            }
+
+            /*
+            |--------------------------------------------------------------
+            | FALLBACK SAFETY
+            |--------------------------------------------------------------
+            */
+            Auth::logout();
+
+            return back()->withErrors([
+                'error' => 'Unable to determine application status.'
+            ]);
         }
 
         /*
-        |--------------------------------------------------------------
-        | FALLBACK SAFETY
-        |--------------------------------------------------------------
+        |--------------------------------------------------------------------------
+        | UNKNOWN ROLE SAFETY
+        |--------------------------------------------------------------------------
         */
         Auth::logout();
 
         return back()->withErrors([
-            'error' => 'Unable to determine application status.'
+            'error' => 'Unauthorized role detected.'
         ]);
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | UNKNOWN ROLE SAFETY
-    |--------------------------------------------------------------------------
-    */
-    Auth::logout();
-
-    return back()->withErrors([
-        'error' => 'Unauthorized role detected.'
-    ]);
-}
     /**
      * LOGOUT USER
      */
     public function logout(Request $request)
     {
-        Auth::logout();
+        $user = auth()->user();
+        log_activity(
+            'staff_logout',
+            'Staff logout',
+            $user->name . '-' . $user->role_id . " successfully logged out."
+        );
+        Auth::logout();  
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

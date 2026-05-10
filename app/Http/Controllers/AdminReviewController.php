@@ -20,6 +20,12 @@ class AdminReviewController extends Controller
             ->latest()
             ->get();
 
+            log_activity(
+                'admin_view_applications',
+                'Viewed applications',
+                'Admin opened applications queue'
+            );
+
         return view('admin.applications.index', compact('applications'));
     }
 
@@ -35,6 +41,13 @@ class AdminReviewController extends Controller
             'employee.documents',
             'employee.payroll'
         ])->findOrFail($id);
+
+        log_activity(
+            'admin_review_application',
+            'Reviewed application',
+            "Admin opened application for {$user->name}",
+            ['user_id' => $user->id]
+        );
 
         return view('admin.applications.show', compact('user'));
     }
@@ -53,6 +66,13 @@ class AdminReviewController extends Controller
             'status' => 'active',
         ]);
 
+        log_activity(
+            'application_approved',
+            'Application approved',
+            $user->name . ' has been approved by '  . auth()->user()->name,
+            ['user_id' => $user->id]
+        );
+
         return back()->with('success', 'Application approved successfully.');
     }
 
@@ -70,7 +90,14 @@ class AdminReviewController extends Controller
             'status' => 'pending',
         ]);
 
-        return back()->with('success', 'Application rejected.');
+        log_activity(
+            'application_rejected',
+            'Application rejected',
+            $user->name . ' has been rejected by '  . auth()->user()->name,
+            ['user_id' => $user->id]
+        );
+
+        return back()->with('error', 'Application rejected.');
     }
 
     public function approveDocument($id)
@@ -83,6 +110,13 @@ class AdminReviewController extends Controller
             'verified_at' => now(),
             'rejection_reason' => null,
         ]);
+
+        log_activity(
+            'document_approved',
+            'Document approved',
+            $user->name . ' - ' . $doc->document_type . ' has been approved by ' . auth()->user()->name,
+            ['user_id' => $user->id]
+        );
 
         return response()->json([
             'status' => 'approved',
@@ -100,6 +134,13 @@ class AdminReviewController extends Controller
             'verified_at' => now(),
             'rejection_reason' => 'Rejected by admin'
         ]);
+
+        log_activity(
+            'document_rejected',
+            'Document rejected',
+            $user->name . ' - ' . $doc->document_type . ' has been rejected by ' . auth()->user()->name,
+            ['user_id' => $user->id]
+        );
 
         return response()->json([
             'status' => 'rejected',

@@ -11,6 +11,7 @@ use App\Models\Skill;
 use App\Models\EmployeeRoleDetail;
 use App\Models\EmployeePayroll;
 use App\Models\EmployeeDocument;
+use App\Models\Activity;
 
 class DashboardController extends Controller
 {
@@ -34,14 +35,16 @@ class DashboardController extends Controller
 
          $data = [
             'totalEmployees' => Employee::count(),
-            'activeEmployees' => User::where('status', 'active')->count(),
-            'pendingApprovals' => User::where('role_id', 3)->where('status', 'pending')->count(),
+            'activeEmployees' => User::where('approval_status', 'approved')->count(),
+            'pendingApprovals' => User::where('role_id', 3)->where('approval_status', 'pending')->count(),
             'complianceAlerts' => EmployeeDocument::whereNotNull('expiry_date')
                ->whereDate('expiry_date', '<=', now()->addDays(30))
                ->where('verification_status', 'Verified')
                ->count(),
 
-            'applications' => $applications, // 👈 ADD THIS
+            'applications' => $applications, // 
+            'activities' => Activity::latest()->take(5)->get(),
+            
          ];
 
          return view('dashboard.admin', $data);

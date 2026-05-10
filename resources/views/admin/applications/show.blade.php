@@ -6,6 +6,36 @@
 
 <div class="bg-white p-6 rounded shadow space-y-6">
 
+        {{-- SUCCESS MESSAGE --}}
+        @if(session('success'))
+            <div class="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        {{-- ERROR MESSAGE --}}
+        @if(session('error'))
+            <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {{ session('error') }}
+            </div>
+        @endif
+
+        {{-- VALIDATION ERRORS --}}
+        @if($errors->any())
+            <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+                
+                <p class="font-semibold text-red-700 mb-2">
+                    Please fix the following errors:
+                </p>
+
+                <ul class="list-disc list-inside text-sm text-red-600 space-y-1">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+
+            </div>
+        @endif
     <!-- HEADER -->
     <div>
         <h2 class="text-2xl font-bold">
@@ -17,13 +47,13 @@
         </p>
 
         <div class="flex gap-3 mt-2 text-sm">
-            <span class="px-2 py-1 bg-gray-100 rounded">
+            <!-- <span class="px-2 py-1 bg-gray-100 rounded">
                 Step {{ $user->registration_step }}/7
-            </span>
-
+            </span> -->
+            Application Status: 
             <span class="px-2 py-1 rounded
-                {{ $user->status === 'active' ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600' }}">
-                {{ ucfirst($user->status) }}
+                {{ $user->approval_status === 'approved' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-yellow-600' }}">
+                {{ ucfirst($user->approval_status) }}
             </span>
         </div>
     </div>

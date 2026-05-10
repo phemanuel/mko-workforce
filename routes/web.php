@@ -100,6 +100,7 @@ use App\Http\Controllers\AdminReviewController;
         Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');  
 
+        //--------Applications route
         Route::get('/applications', [AdminReviewController::class, 'index'])
         ->name('admin.applications');
 
@@ -114,6 +115,13 @@ use App\Http\Controllers\AdminReviewController;
 
         Route::post('/applications/{id}/reject', [AdminReviewController::class, 'reject'])
             ->name('admin.applications.reject');
+
+            //----------employee routes
+        Route::get('/employees', [EmployeeController::class, 'index'])
+        ->name('admin.employees.index');
+        Route::get('/employees/{employee}', [EmployeeController::class, 'show']);    
+        Route::put('/employees/{employee}', [EmployeeController::class, 'update']);
+        Route::get('/employees-export/csv', [EmployeeController::class, 'exportCsv']);
 
     });
     
