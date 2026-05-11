@@ -57,4 +57,13 @@ class Employee extends Model
             ->where('status', '!=', 'approved')
             ->count() === 0;
     }
+
+    public function shifts()
+    {
+        return $this->belongsToMany(
+            Shift::class,
+            'shift_assignments'
+        );
+    }
+    
 }

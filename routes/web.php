@@ -8,6 +8,7 @@ use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\AdminApplicationController;
 use App\Http\Controllers\AdminReviewController;
+use App\Http\Controllers\ShiftController;
 
 
 
@@ -124,6 +125,9 @@ use App\Http\Controllers\AdminReviewController;
         Route::put('/employees/{employee}', [EmployeeController::class, 'update']);
 
         Route::get('/employees-export/csv', [EmployeeController::class, 'exportCsv']);
+
+        //-------Shift routes
+        Route::resource('shifts', ShiftController::class);
 
     });
     

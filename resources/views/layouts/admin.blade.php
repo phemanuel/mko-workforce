@@ -24,7 +24,7 @@
 
     <a href="/admin/shifts"
        class="block px-4 py-2 rounded hover:bg-gray-800
-       {{ request()->routeIs('admin.shifts*') ? 'bg-gray-800 text-white' : '' }}">
+       {{ request()->routeIs('shifts.index*') ? 'bg-gray-800 text-white' : '' }}">
         📅 Shifts
     </a>
 
