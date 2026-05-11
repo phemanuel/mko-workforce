@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class EmployeeController extends Controller
 {
@@ -80,6 +81,53 @@ class EmployeeController extends Controller
             'payroll',
             'workEligibility'
         ]);
+
+        $countries = [
+            'Afghanistan',
+            'Albania',
+            'Algeria',
+            'Andorra',
+            'Angola',
+            'Argentina',
+            'Australia',
+            'Austria',
+            'Bangladesh',
+            'Belgium',
+            'Brazil',
+            'Canada',
+            'China',
+            'Denmark',
+            'Egypt',
+            'France',
+            'Germany',
+            'Ghana',
+            'India',
+            'Ireland',
+            'Italy',
+            'Japan',
+            'Kenya',
+            'Mexico',
+            'Netherlands',
+            'Nigeria',
+            'Norway',
+            'Pakistan',
+            'Poland',
+            'Portugal',
+            'Qatar',
+            'Russia',
+            'Saudi Arabia',
+            'South Africa',
+            'Spain',
+            'Sweden',
+            'Switzerland',
+            'Turkey',
+            'UAE',
+            'United Kingdom',
+            'United States',
+            'Zimbabwe',
+        ];
+
+        sort($countries);
          
 
         log_activity(
@@ -91,55 +139,148 @@ class EmployeeController extends Controller
         return response()->json($employee);
     }
 
-     public function update(Request $request, Employee $employee)
+    public function edit(Employee $employee)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email',
-            'phone' => 'nullable|string',
-            'employment_type' => 'nullable|string',
-            'primary_role' => 'nullable|string',
+        $employee->load([
+            'user',
+            'profile',
+            'roleDetail',
+            'workEligibility',
+            'payroll',
+            'documents',
+            'skills'
         ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | UPDATE USER
-        |--------------------------------------------------------------------------
-        */
-
-        $employee->user->update([
-            'name' => $request->name,
-            'email' => $request->email,
-        ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | UPDATE EMPLOYEE
-        |--------------------------------------------------------------------------
-        */
-
-        $employee->update([
-            'phone' => $request->phone,
-            'employment_type' => $request->employment_type,
-            'primary_role' => $request->primary_role,
-        ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | ACTIVITY LOG
-        |--------------------------------------------------------------------------
-        */
 
         log_activity(
-            'employee_updated',
-            'Employee profile updated',
-            'Updated profile for '.$employee->user->name . " by " . auth()->user()->name
+            'edit_employee_open',
+            'Opened employee edit form',
+            $employee->user->name . ' edit form opened by ' . auth()->user()->name
         );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Employee updated successfully.'
-        ]);
+        return response()->json($employee);
+    }
+
+     public function update(Request $request, Employee $employee)
+    {
+        DB::beginTransaction();
+
+        try {
+
+            /*
+            |--------------------------------------------------------------------------
+            | USER UPDATE
+            |--------------------------------------------------------------------------
+            */
+            $employee->user()->update([
+                'name' => $request->name,               
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | EMPLOYEE CORE
+            |--------------------------------------------------------------------------
+            */
+            $employee->update([
+                'primary_role' => $request->primary_role,
+                'employment_type' => $request->employment_type,
+                'start_date' => $request->start_date,
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | PROFILE
+            |--------------------------------------------------------------------------
+            */
+            $employee->profile()->updateOrCreate(
+                ['employee_id' => $employee->id],
+                [
+                    'phone' => $request->phone,
+                    'gender' => $request->gender,
+                    'date_of_birth' => $request->date_of_birth,
+                    'nationality' => $request->nationality,
+                    'address' => $request->address,
+                    'postcode' => $request->postcode,
+                    'ni_number' => $request->ni_number,
+                    'emergency_contact_name' => $request->emergency_contact_name,
+                    'emergency_contact_phone' => $request->emergency_contact_phone,
+                ]
+            );
+
+            /*
+            |--------------------------------------------------------------------------
+            | WORK ELIGIBILITY
+            |--------------------------------------------------------------------------
+            */
+            $employee->workEligibility()->updateOrCreate(
+                ['employee_id' => $employee->id],
+                [
+                    'work_status' => $request->work_status,
+                    'share_code' => $request->share_code,
+                    'expiry_date' => $request->expiry_date,
+                ]
+            );
+
+            /*
+            |--------------------------------------------------------------------------
+            | ROLE DETAILS (JSON)
+            |--------------------------------------------------------------------------
+            */
+            $employee->roleDetail()->updateOrCreate(
+                ['employee_id' => $employee->id],
+                [
+                    'role_type' => $request->primary_role,
+                    'secondary_skills' => $request->secondary_skills ?? [],
+                    'data' => $request->role_detail['data'] ?? [],
+                    'data1' => $request->role_detail['data1'] ?? [],
+                ]
+            );
+
+            /*
+            |--------------------------------------------------------------------------
+            | PAYROLL
+            |--------------------------------------------------------------------------
+            */
+            $employee->payroll()->updateOrCreate(
+                ['employee_id' => $employee->id],
+                [
+                    'bank_name' => $request->bank_name,
+                    'account_number' => $request->account_number,
+                    'sort_code' => $request->sort_code,
+                    'utr' => $request->utr,
+                    'payment_type' => $request->payment_type,
+                ]
+            );
+
+            DB::commit();
+
+            log_activity(
+            'edit_employee_open',
+            'Opened employee edit form',
+            $employee->user->name . ' profile updated by ' . auth()->user()->name
+
+        );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Employee updated successfully',
+                'employee' => $employee->fresh([
+                    'user',
+                    'profile',
+                    'roleDetail',
+                    'payroll',
+                    'workEligibility'
+                ])
+            ]);
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function exportCsv()

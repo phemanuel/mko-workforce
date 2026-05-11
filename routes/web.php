@@ -119,8 +119,10 @@ use App\Http\Controllers\AdminReviewController;
             //----------employee routes
         Route::get('/employees', [EmployeeController::class, 'index'])
         ->name('admin.employees.index');
-        Route::get('/employees/{employee}', [EmployeeController::class, 'show']);    
+        Route::get('/employees/{employee}', [EmployeeController::class, 'show']); 
+        Route::get('/employees/{employee}/edit', [EmployeeController::class, 'edit']);
         Route::put('/employees/{employee}', [EmployeeController::class, 'update']);
+
         Route::get('/employees-export/csv', [EmployeeController::class, 'exportCsv']);
 
     });
