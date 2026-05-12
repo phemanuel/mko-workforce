@@ -12,6 +12,7 @@ use App\Models\EmployeeRoleDetail;
 use App\Models\EmployeePayroll;
 use App\Models\EmployeeDocument;
 use App\Models\Activity;
+use App\Models\Shift;
 
 class DashboardController extends Controller
 {
@@ -35,6 +36,12 @@ class DashboardController extends Controller
 
          $data = [
             'totalEmployees' => Employee::count(),
+            'approvedEmployees' => Employee::with(['user', 'roleDetail'])
+               ->whereHas('user', function ($query) {
+                  $query->where('approval_status', 'approved')
+                        ->where('role_id', '!=', 1);
+               })
+               ->get(),
             'activeEmployees' => User::where('approval_status', 'approved')->count(),
             'pendingApprovals' => User::where('role_id', 3)->where('approval_status', 'pending')->count(),
             'complianceAlerts' => EmployeeDocument::whereNotNull('expiry_date')
@@ -44,6 +51,7 @@ class DashboardController extends Controller
 
             'applications' => $applications, // 
             'activities' => Activity::latest()->take(5)->get(),
+            'shifts' => Shift::latest()->take(5)->get(),
             
          ];
 

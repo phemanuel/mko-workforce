@@ -103,6 +103,7 @@ class AdminReviewController extends Controller
     public function approveDocument($id)
     {
         $doc = EmployeeDocument::findOrFail($id);
+        $user = User::where('id', $doc->employee_id)->first();
 
         $doc->update([
             'status' => 'approved',
@@ -126,7 +127,9 @@ class AdminReviewController extends Controller
 
     public function rejectDocument($id)
     {
+        
         $doc = EmployeeDocument::findOrFail($id);
+        $user = User::where('id', $doc->employee_id)->first();
 
         $doc->update([
             'status' => 'rejected',

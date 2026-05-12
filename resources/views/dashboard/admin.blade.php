@@ -31,90 +31,6 @@
 
 </div>
 
-<!-- MAIN DASHBOARD SECTION -->
-<div class="mt-6">
-
-    <!-- RECENT ACTIVITY -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-
-        <!-- HEADER -->
-        <div class="flex items-center justify-between mb-6">
-
-            <div>
-
-                <h3 class="text-lg font-semibold text-gray-800">
-                    Recent Activity
-                </h3>
-
-                <p class="text-sm text-gray-500 mt-1">
-                    Latest operational and compliance events
-                </p>
-
-            </div>
-
-            <button class="text-sm text-red-600 hover:text-red-700 font-medium">
-                View Logs
-            </button>
-
-        </div>
-
-        <!-- ACTIVITY FEED -->
-        <div class="space-y-5">
-
-    @forelse($activities as $activity)
-
-        <div class="flex gap-4">
-
-            <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-
-                @if($activity->type == 'employee_registered')
-                    ✔
-                @elseif($activity->type == 'compliance_alert')
-                    ⚠
-                @elseif($activity->type == 'application_approved')
-                    ✅
-                @else
-                    📌
-                @endif
-
-            </div>
-
-            <div class="flex-1">
-
-                <div class="flex justify-between">
-
-                    <p class="font-medium text-gray-800">
-                        {{ $activity->title }}
-                    </p>
-
-                    <span class="text-xs text-gray-400">
-                        {{ $activity->created_at->diffForHumans() }}
-                    </span>
-
-                </div>
-
-                <p class="text-sm text-gray-500 mt-1">
-                    {{ $activity->description }}
-                </p>
-
-            </div>
-
-        </div>
-
-    @empty
-
-        <p class="text-sm text-gray-500">
-            No recent activity yet.
-        </p>
-
-    @endforelse
-
-</div>
-
-    </div>
-
-</div>
-
 <!-- FLOATING QUICK ACTION BUTTON -->
 <div class="fixed right-6 bottom-8 z-50">
 
@@ -244,223 +160,576 @@
 
 </div>
 
-<!-- APPLICATION QUEUE -->
-<div class="mt-6 bg-white rounded-2xl shadow-sm border border-gray-100">
+<!-- APPLICATIONS & EMPLOYEES SECTION -->
+<div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-    <!-- HEADER -->
-    <div class="flex items-center justify-between px-6 py-5 border-b">
+    <!-- CARD 1 : RECENT APPLICATIONS -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 h-[700px] flex flex-col">
 
-        <div>
-            <h3 class="text-lg font-semibold text-gray-800">
-                Recent Applications
-            </h3>
+        <!-- HEADER -->
+        <div class="flex items-center justify-between mb-6">
 
-            <p class="text-sm text-gray-500 mt-1">
-                Newly submitted workforce applications
-            </p>
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800">
+                    Recent Applications
+                </h3>
+
+                <p class="text-sm text-gray-500 mt-1">
+                    Newly submitted workforce applications
+                </p>
+            </div>
+
+            <a href="/admin/applications"
+               class="text-sm font-medium text-red-600 hover:text-red-700">
+                View All
+            </a>
+
         </div>
 
-        <a href="/admin/applications"
-           class="text-sm font-medium text-red-600 hover:text-red-700">
-            View All
-        </a>
+        <!-- SCROLLABLE APPLICATION LIST -->
+        <div class="space-y-4 overflow-y-auto pr-2 flex-1">
+
+            @forelse($applications as $app)
+
+                @php
+                    $displayStep = min($app->registration_step, 6);
+                    $progress = ($displayStep / 6) * 100;
+
+                    $statusClasses = [
+                        'approved' => 'bg-green-100 text-green-700',
+                        'rejected' => 'bg-red-100 text-red-700',
+                        'pending' => 'bg-yellow-100 text-yellow-700',
+                        'under_review' => 'bg-blue-100 text-blue-700',
+                    ];
+                @endphp
+
+                <div class="border border-gray-100 rounded-2xl p-4 hover:border-red-100 transition">
+
+                    <!-- TOP -->
+                    <div class="flex items-start justify-between gap-4">
+
+                        <div class="flex items-center gap-3">
+
+                            <!-- AVATAR -->
+                            <div class="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center text-sm font-semibold shrink-0">
+
+                                {{ strtoupper(substr($app->name, 0, 1)) }}
+
+                            </div>
+
+                            <!-- DETAILS -->
+                            <div>
+
+                                <p class="font-semibold text-gray-800">
+                                    {{ $app->name }}
+                                </p>
+
+                                <p class="text-sm text-gray-500">
+                                    {{ $app->email }}
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <!-- STATUS -->
+                        <span class="px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap
+                            {{ $statusClasses[$app->approval_status] ?? 'bg-gray-100 text-gray-700' }}">
+
+                            {{ ucwords(str_replace('_', ' ', $app->approval_status ?? 'pending')) }}
+
+                        </span>
+
+                    </div>
+
+                    <!-- PROGRESS -->
+                    <div class="mt-5">
+
+                        <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
+
+                            <span>
+                                Registration Progress
+                            </span>
+
+                            <span>
+                                Step {{ $displayStep }}/6 ({{ round($progress) }}%)
+                            </span>
+
+                        </div>
+
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+
+                            <div class="bg-red-600 h-2 rounded-full"
+                                 style="width: {{ $progress }}%">
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <!-- FOOTER -->
+                    <div class="mt-5 flex items-center justify-between border-t border-gray-100 pt-4">
+
+                        <div>
+
+                            <p class="text-sm text-gray-500">
+                                Submitted
+                            </p>
+
+                            <p class="text-sm font-medium text-gray-700 mt-1">
+                                {{ $app->created_at->format('M d, Y') }}
+                            </p>
+
+                        </div>
+
+                        <a href="/admin/applications/{{ $app->id }}"
+                           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-black text-white text-sm hover:bg-gray-800 transition">
+
+                            Review
+
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="w-4 h-4"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="2"
+                                      d="M9 5l7 7-7 7"/>
+
+                            </svg>
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            @empty
+
+                <div class="flex flex-col items-center justify-center py-20">
+
+                    <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-2xl mb-4">
+                        📄
+                    </div>
+
+                    <p class="text-sm font-medium text-gray-700">
+                        No recent applications
+                    </p>
+
+                    <p class="text-xs text-gray-500 mt-1">
+                        New workforce applications will appear here
+                    </p>
+
+                </div>
+
+            @endforelse
+
+        </div>
 
     </div>
 
-    <!-- TABLE -->
-    <div class="overflow-x-auto">
 
-        <table class="w-full">
+    <!-- CARD 2 : EMPLOYEES -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 h-[700px] flex flex-col">
 
-            <thead class="bg-gray-50 border-b">
+        <!-- HEADER -->
+        <div class="flex items-center justify-between mb-6">
 
-                <tr class="text-left text-xs uppercase tracking-wider text-gray-500">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800">
+                    Employees
+                </h3>
 
-                    <th class="px-6 py-4 font-medium">
-                        Applicant
-                    </th>
+                <p class="text-sm text-gray-500 mt-1">
+                    Recently active workforce personnel
+                </p>
+            </div>
 
-                    <th class="px-6 py-4 font-medium">
-                        Progress
-                    </th>
+            <a href="/admin/employees"
+               class="text-sm font-medium text-red-600 hover:text-red-700">
+                View Employees
+            </a>
 
-                    <th class="px-6 py-4 font-medium">
-                        Status
-                    </th>
+        </div>
 
-                    <th class="px-6 py-4 font-medium">
-                        Submitted
-                    </th>
+        <!-- SCROLLABLE EMPLOYEE LIST -->
+        <!-- EMPLOYEES LIST -->
+        <div class="space-y-4 overflow-y-auto pr-2 flex-1">
 
-                    <th class="px-6 py-4 font-medium text-right">
-                        Action
-                    </th>
+            @forelse($approvedEmployees as $employee)
 
-                </tr>
+                <div class="border border-gray-100 rounded-2xl p-4 hover:border-red-100 transition">
 
-            </thead>
+                    <!-- TOP -->
+                    <div class="flex items-start justify-between gap-4">
 
-            <tbody class="divide-y divide-gray-100">
+                        <div class="flex items-center gap-3">
 
-                @forelse($applications as $app)
+                            <!-- AVATAR -->
+                            <div class="w-12 h-12 rounded-full bg-red-600 text-white flex items-center justify-center text-sm font-semibold shrink-0">
 
-                    <tr class="hover:bg-gray-50 transition">
-
-                        <!-- USER -->
-                        <td class="px-6 py-4">
-
-                            <div class="flex items-center gap-3">
-
-                                <!-- AVATAR -->
-                                <div class="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center text-sm font-semibold">
-
-                                    {{ strtoupper(substr($app->name, 0, 1)) }}
-
-                                </div>
-
-                                <!-- DETAILS -->
-                                <div>
-
-                                    <p class="font-medium text-gray-800">
-                                        {{ $app->name }}
-                                    </p>
-
-                                    <p class="text-xs text-gray-500">
-                                        {{ $app->email }}
-                                    </p>
-
-                                </div>
+                                {{ strtoupper(substr($employee->name, 0, 1)) }}
 
                             </div>
 
-                        </td>
+                            <!-- DETAILS -->
+                            <div>
 
-                        <!-- STEP -->
-                        <td class="px-6 py-4">
-                            @php
-                                $displayStep = min($app->registration_step, 6);
-                                $progress = ($displayStep / 6) * 100;
-                            @endphp
-                            <div class="flex flex-col gap-1">
+                                <p class="font-semibold text-gray-800">
+                                    {{ $employee->user->name }}
+                                </p>
 
-                                <div class="flex items-center justify-between text-xs text-gray-500">
-
-                                    <span>
-                                        Step {{ $displayStep }}/6
-                                    </span>
-
-                                    <span>
-                                        {{ round($progress) }}%
-                                    </span>
-
-                                </div>
-
-                                <!-- PROGRESS -->
-                                <div class="w-40 bg-gray-200 rounded-full h-2">
-
-                                    <div class="bg-red-600 h-2 rounded-full"
-                                         style="width: {{ $progress }}%"
-                                    </div>
-
-                                </div>
+                                <p class="text-sm text-gray-500">
+                                    {{ $employee->user->email }}
+                                </p>
 
                             </div>
 
-                        </td>
+                        </div>
 
                         <!-- STATUS -->
-                        <td class="px-6 py-4">
+                        <span class="px-3 py-1 rounded-full text-xs font-medium
+                            {{ $employee->status == 'active'
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-gray-100 text-gray-700' }}">
 
-                            @php
+                            {{ ucfirst($employee->user->status ?? 'Inactive') }}
 
-                                $statusClasses = [
-                                    'approved' => 'bg-green-100 text-green-700',
-                                    'rejected' => 'bg-red-100 text-red-700',
-                                    'pending' => 'bg-yellow-100 text-yellow-700',
-                                    'under_review' => 'bg-blue-100 text-blue-700',
-                                ];
+                        </span>
 
-                            @endphp
+                    </div>
 
-                            <span class="px-3 py-1 rounded-full text-xs font-medium
-                                {{ $statusClasses[$app->approval_status] ?? 'bg-gray-100 text-gray-700' }}">
+                    <!-- DETAILS -->
+                    <div class="grid grid-cols-2 gap-4 mt-5">
 
-                                {{ ucwords(str_replace('_', ' ', $app->approval_status ?? 'pending')) }}
+                        <!-- ROLE -->
+                        <div>
 
+                            <p class="text-xs text-gray-400">
+                                Role
+                            </p>
+
+                            <p class="text-sm font-medium text-gray-700 mt-1">
+
+                                @if($employee->user->role_id == 2)
+
+                                    Supervisor
+
+                                @elseif($employee->user->role_id == 3)
+
+                                    {{ $employee->roleDetail->role_type ?? 'Staff' }}
+
+                                @else
+
+                                    N/A
+
+                                @endif
+
+                            </p>
+
+                        </div>
+
+                        <!-- DEPARTMENT -->
+                        <div>
+
+                            <p class="text-xs text-gray-400">
+                                Department
+                            </p>
+
+                            <p class="text-sm font-medium text-gray-700 mt-1">
+                                {{ $employee->department ?? 'N/A' }}
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <!-- FOOTER -->
+                    <div class="mt-5 flex items-center justify-between border-t border-gray-100 pt-4">
+
+                        <div>
+
+                            <p class="text-sm text-gray-500">
+                                Joined
+                            </p>
+
+                            <p class="text-sm font-medium text-gray-700 mt-1">
+                                {{ $employee->created_at->format('M d, Y') }}
+                            </p>
+
+                        </div>
+
+                        <a href="/admin/employees/{{ $employee->id }}"
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-black text-white text-sm hover:bg-gray-800 transition">
+
+                            View
+
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                class="w-4 h-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor">
+
+                                <path stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M9 5l7 7-7 7"/>
+
+                            </svg>
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            @empty
+
+                <div class="flex flex-col items-center justify-center py-20">
+
+                    <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-2xl mb-4">
+                        👥
+                    </div>
+
+                    <p class="text-sm font-medium text-gray-700">
+                        No employees found
+                    </p>
+
+                    <p class="text-xs text-gray-500 mt-1">
+                        Employee records will appear here
+                    </p>
+
+                </div>
+
+            @endforelse
+
+        </div>
+    </div>
+
+</div>
+
+<!-- MAIN DASHBOARD SECTION -->
+<div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- CARD 1 : RECENT ACTIVITY -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 h-[650px] flex flex-col">
+
+        <!-- HEADER -->
+        <div class="flex items-center justify-between mb-6">
+
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800">
+                    Recent Activity
+                </h3>
+
+                <p class="text-sm text-gray-500 mt-1">
+                    Latest operational and compliance events
+                </p>
+            </div>
+
+            <button class="text-sm text-red-600 hover:text-red-700 font-medium">
+                View Logs
+            </button>
+
+        </div>
+
+        <!-- SCROLLABLE ACTIVITY FEED -->
+        <div class="space-y-5 overflow-y-auto pr-2 flex-1">
+
+            @forelse($activities as $activity)
+
+                <div class="flex gap-4">
+
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-lg shrink-0">
+
+                        @if($activity->type == 'employee_registered')
+                            ✔
+                        @elseif($activity->type == 'compliance_alert')
+                            ⚠
+                        @elseif($activity->type == 'application_approved')
+                            ✅
+                        @else
+                            📌
+                        @endif
+
+                    </div>
+
+                    <div class="flex-1">
+
+                        <div class="flex justify-between gap-3">
+
+                            <p class="font-medium text-gray-800">
+                                {{ $activity->title }}
+                            </p>
+
+                            <span class="text-xs text-gray-400 whitespace-nowrap">
+                                {{ $activity->created_at->diffForHumans() }}
                             </span>
 
-                        </td>
+                        </div>
 
-                        <!-- DATE -->
-                        <td class="px-6 py-4 text-sm text-gray-500">
+                        <p class="text-sm text-gray-500 mt-1">
+                            {{ $activity->description }}
+                        </p>
 
-                            {{ $app->created_at->format('M d, Y') }}
+                    </div>
 
-                            <div class="text-xs text-gray-400 mt-1">
-                                {{ $app->created_at->diffForHumans() }}
-                            </div>
+                </div>
 
-                        </td>
+            @empty
 
-                        <!-- ACTION -->
-                        <td class="px-6 py-4 text-right">
+                <p class="text-sm text-gray-500">
+                    No recent activity yet.
+                </p>
 
-                            <a href="/admin/applications/{{ $app->id }}"
-                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-black text-white text-sm hover:bg-gray-800 transition">
+            @endforelse
 
-                                Review
+        </div>
 
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                    class="w-4 h-4"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor">
+    </div>
 
-                                    <path stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M9 5l7 7-7 7"/>
 
-                                </svg>
+    <!-- CARD 2 : SHIFTS -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 h-[650px] flex flex-col">
 
-                            </a>
+        <!-- HEADER -->
+        <div class="flex items-center justify-between mb-6">
 
-                        </td>
-                    </tr>
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800">
+                    Shift Overview
+                </h3>
 
-                @empty
+                <p class="text-sm text-gray-500 mt-1">
+                    Latest workforce shift assignments
+                </p>
+            </div>
 
-                    <tr>
+            <a href="{{ route('shifts.index') }}"
+               class="text-sm text-red-600 hover:text-red-700 font-medium">
+                View Shifts
+            </a>
 
-                        <td colspan="5" class="px-6 py-10 text-center">
+        </div>
 
-                            <div class="flex flex-col items-center">
+        <!-- SCROLLABLE SHIFT LIST -->
+        <div class="space-y-4 overflow-y-auto pr-2 flex-1">
 
-                                <div class="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+            @forelse($shifts->take(10) as $shift)
 
-                                    📄
+                <div class="border border-gray-100 rounded-2xl p-4 hover:border-red-100 transition">
 
-                                </div>
+                    <!-- TOP -->
+                    <div class="flex items-start justify-between gap-3">
 
-                                <p class="text-sm font-medium text-gray-700">
-                                    No recent applications
-                                </p>
+                        <div>
+                            <h4 class="font-semibold text-gray-800">
+                                {{ $shift->title }}
+                            </h4>
 
-                                <p class="text-xs text-gray-500 mt-1">
-                                    New workforce applications will appear here
-                                </p>
+                            <p class="text-sm text-gray-500 mt-1">
+                                {{ $shift->location }}
+                            </p>
+                        </div>
 
-                            </div>
+                        <span class="
+                            px-3 py-1 rounded-full text-xs font-medium
 
-                        </td>
+                            @if($shift->status == 'open')
+                                bg-green-100 text-green-700
+                            @elseif($shift->status == 'closed')
+                                bg-gray-200 text-gray-700
+                            @else
+                                bg-yellow-100 text-yellow-700
+                            @endif
+                        ">
+                            {{ ucfirst($shift->status) }}
+                        </span>
 
-                    </tr>
+                    </div>
 
-                @endforelse
+                    <!-- SHIFT DETAILS -->
+                    <div class="grid grid-cols-2 gap-4 mt-4">
 
-            </tbody>
+                        <div>
+                            <p class="text-xs text-gray-400">
+                                Shift Date
+                            </p>
 
-        </table>
+                            <p class="text-sm font-medium text-gray-700 mt-1">
+                                {{ \Carbon\Carbon::parse($shift->shift_date)->format('M d, Y') }}
+                            </p>
+                        </div>
+
+                        <div>
+                            <p class="text-xs text-gray-400">
+                                Time
+                            </p>
+
+                            <p class="text-sm font-medium text-gray-700 mt-1">
+                                {{ \Carbon\Carbon::parse($shift->start_time)->format('h:i A') }}
+                                -
+                                {{ \Carbon\Carbon::parse($shift->end_time)->format('h:i A') }}
+                            </p>
+                        </div>
+
+                        <div>
+                            <p class="text-xs text-gray-400">
+                                Required Role
+                            </p>
+
+                            <p class="text-sm font-medium text-gray-700 mt-1">
+                                {{ $shift->role_required }}
+                            </p>
+                        </div>
+
+                        <div>
+                            <p class="text-xs text-gray-400">
+                                Staff Needed
+                            </p>
+
+                            <p class="text-sm font-medium text-gray-700 mt-1">
+                                {{ $shift->required_staff }}
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <!-- RATE -->
+                    <div class="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
+
+                        <span class="text-sm text-gray-500">
+                            Hourly Rate
+                        </span>
+
+                        <span class="font-semibold text-red-600">
+                            ₦{{ number_format($shift->hourly_rate, 2) }}/hr
+                        </span>
+
+                    </div>
+
+                </div>
+
+            @empty
+
+                <div class="text-center py-10">
+
+                    <p class="text-sm text-gray-500">
+                        No shifts available yet.
+                    </p>
+
+                    <a href="{{ route('shifts.index') }}"
+                       class="inline-flex mt-4 text-sm text-red-600 hover:text-red-700 font-medium">
+                        Go to Shifts
+                    </a>
+
+                </div>
+
+            @endforelse
+
+        </div>
 
     </div>
 

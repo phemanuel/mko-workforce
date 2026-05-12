@@ -128,6 +128,9 @@ use App\Http\Controllers\ShiftController;
 
         //-------Shift routes
         Route::resource('shifts', ShiftController::class);
+        Route::patch('shifts/{id}/complete', [ShiftController::class, 'complete']);
+        Route::get('shifts/{id}/assign-data', [ShiftController::class, 'assignData']);
+        Route::post('shifts/{id}/assign', [ShiftController::class, 'assign']);
 
     });
     

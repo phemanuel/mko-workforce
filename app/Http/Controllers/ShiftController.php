@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Shift;
+use App\Models\ShiftAssignment;
+use App\Models\Employee;
 
 class ShiftController extends Controller
 {
@@ -14,7 +16,8 @@ class ShiftController extends Controller
     */
     public function index()
     {
-        $shifts = Shift::latest()->paginate(10);
+        $shifts = Shift::where('status', 'open')
+        ->paginate(6);
 
         log_activity(
             'shift_viewed',
@@ -101,9 +104,11 @@ class ShiftController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show($id)
     {
-        //
+        $shift = Shift::findOrFail($id);
+
+        return response()->json($shift);
     }
 
     /**
@@ -117,9 +122,16 @@ class ShiftController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
-        //
+        $shift = Shift::findOrFail($id);
+
+        $shift->update($request->all());
+
+        return response()->json([
+            'success' => true,
+            'shift' => $shift
+        ]);
     }
 
     /**
@@ -128,5 +140,65 @@ class ShiftController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function complete($id)
+    {
+        $shift = Shift::findOrFail($id);
+
+        $shift->update([
+            'status' => 'Completed'
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'shift' => $shift
+        ]);
+    }
+
+    public function assignData($id)
+    {
+        $shift = Shift::findOrFail($id);
+
+        $assigned = ShiftAssignment::with('employee.user')
+            ->where('shift_id', $id)
+            ->get();
+
+        $staff = Employee::with('user')->get();
+
+        return response()->json([
+            'shift' => $shift,
+            'assigned' => $assigned,
+            'staff' => $staff
+        ]);
+    }
+
+    public function assign(Request $request, $id)
+    {
+        $shift = Shift::findOrFail($id);
+
+        $currentCount = ShiftAssignment::where('shift_id', $id)->count();
+
+        $incoming = count($request->employees ?? []);
+
+        if (($currentCount + $incoming) > $shift->required_staff) {
+            return response()->json([
+                'message' => 'Shift staffing limit exceeded'
+            ], 422);
+        }
+
+        foreach ($request->employees as $employeeId) {
+
+            ShiftAssignment::firstOrCreate([
+                'shift_id' => $id,
+                'employee_id' => $employeeId,
+            ], [
+                'status' => 'Assigned'
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Staff assigned successfully'
+        ]);
     }
 }
