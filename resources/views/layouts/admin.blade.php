@@ -30,7 +30,7 @@
 
     <a href="/admin/attendance"
        class="block px-4 py-2 rounded hover:bg-gray-800
-       {{ request()->routeIs('admin.attendance*') ? 'bg-gray-800 text-white' : '' }}">
+       {{ request()->routeIs('attendance.index*') ? 'bg-gray-800 text-white' : '' }}">
         ⏱ Attendance
     </a>
 

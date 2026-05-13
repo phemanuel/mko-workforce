@@ -317,4 +317,73 @@ class ShiftController extends Controller
         ]);
     }
     
+    public function adminCheckIn(Request $request, $shiftId, $userId)
+    {
+        $shift = Shift::findOrFail($shiftId);
+
+        $attendance = Attendance::firstOrCreate([
+            'shift_id' => $shiftId,
+            'user_id' => $userId,
+        ]);
+
+        $attendance->update([
+            'check_in_time' => now(),
+
+            // MOCK GPS
+            'check_in_lat' => $request->lat ?? 0,
+            'check_in_lng' => $request->lng ?? 0,
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | LATE LOGIC
+        |--------------------------------------------------------------------------
+        */
+        $shiftStart = strtotime($shift->shift_date . ' ' . $shift->start_time);
+
+        if (now()->timestamp > $shiftStart) {
+            $attendance->status = 'late';
+        } else {
+            $attendance->status = 'present';
+        }
+
+        $attendance->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Staff checked in successfully (admin)'
+        ]);
+    }
+
+    public function adminCheckOut(Request $request, $shiftId, $userId)
+    {
+        $attendance = Attendance::where('shift_id', $shiftId)
+            ->where('user_id', $userId)
+            ->firstOrFail();
+
+        $attendance->update([
+            'check_out_time' => now(),
+
+            // MOCK GPS
+            'check_out_lat' => $request->lat ?? 0,
+            'check_out_lng' => $request->lng ?? 0,
+        ]);
+
+        $shift = Shift::findOrFail($shiftId);
+
+        $shiftEnd = strtotime($shift->shift_date . ' ' . $shift->end_time);
+
+        if (now()->timestamp < $shiftEnd) {
+            $attendance->status = 'early_leave';
+        } else {
+            $attendance->status = 'completed';
+        }
+
+        $attendance->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Staff checked out successfully (admin)'
+        ]);
+    }
 }

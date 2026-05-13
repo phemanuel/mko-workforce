@@ -41,4 +41,9 @@ class Shift extends Model
             'shift_assignments'
         );
     }
+
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
+    }
 }

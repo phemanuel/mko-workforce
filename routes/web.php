@@ -9,6 +9,7 @@ use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\AdminApplicationController;
 use App\Http\Controllers\AdminReviewController;
 use App\Http\Controllers\ShiftController;
+use App\Http\Controllers\AttendanceController;
 
 
 
@@ -133,6 +134,10 @@ use App\Http\Controllers\ShiftController;
         Route::post('shifts/{id}/assign', [ShiftController::class, 'assign']);
         Route::post('/shifts/unassign/{assignment}', [ShiftController::class, 'unassign'])
         ->name('shifts.unassign');
+
+        //--------Attendance Routes
+         Route::get('/attendance', [AttendanceController::class, 'index'])
+        ->name('attendance.index');
 
     });
     
