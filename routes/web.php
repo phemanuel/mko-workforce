@@ -131,6 +131,8 @@ use App\Http\Controllers\ShiftController;
         Route::patch('shifts/{id}/complete', [ShiftController::class, 'complete']);
         Route::get('shifts/{id}/assign-data', [ShiftController::class, 'assignData']);
         Route::post('shifts/{id}/assign', [ShiftController::class, 'assign']);
+        Route::post('/shifts/unassign/{assignment}', [ShiftController::class, 'unassign'])
+        ->name('shifts.unassign');
 
     });
     

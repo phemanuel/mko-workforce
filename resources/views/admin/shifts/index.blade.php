@@ -1,7 +1,33 @@
 @extends('layouts.admin')
 
 @section('content')
+<style>
 
+.shift-tab {
+
+    padding: 10px 16px;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 500;
+
+    background: #f3f4f6;
+    color: #4b5563;
+
+    transition: all .2s ease;
+}
+
+.shift-tab:hover {
+
+    background: #e5e7eb;
+}
+
+.active-shift-tab {
+
+    background: black;
+    color: white;
+}
+
+</style>
 <div class="p-6">
 
     <!-- HEADER -->
@@ -84,8 +110,36 @@
 
         </div>
 
-        <div class="bg-black text-white text-sm px-4 py-2 rounded-2xl">
-            {{ $shifts->count() }} Total
+        <div class="flex items-center gap-2">
+
+            <button class="shift-tab active-shift-tab"
+                    data-status="All">
+
+                All
+
+            </button>
+
+            <button class="shift-tab"
+                    data-status="Open">
+
+                Open
+
+            </button>
+
+            <button class="shift-tab"
+                    data-status="Assigned">
+
+                Assigned
+
+            </button>
+
+            <button class="shift-tab"
+                    data-status="Completed">
+
+                Completed
+
+            </button>
+
         </div>
 
     </div>
@@ -121,7 +175,11 @@
             @endphp
 
             <!-- CARD -->
-            <div class="rounded-3xl border bg-gradient-to-br {{ $cardColor }} p-5 shadow-sm hover:shadow-lg transition duration-300">
+            <div class="shift-card rounded-3xl border
+            bg-gradient-to-br {{ $cardColor }}
+            p-5 shadow-sm hover:shadow-lg transition duration-300"
+
+            data-status="{{ $shift->status }}">
 
                 <!-- TOP -->
                 <div class="flex items-start justify-between gap-4">
@@ -205,15 +263,72 @@
 
                     <div class="grid grid-cols-2 gap-3 pt-2">
 
+                        <!-- STAFF REQUIRED -->
                         <div class="bg-white rounded-2xl p-3 shadow-sm">
 
-                            <p class="text-xs text-gray-500">
-                                Staff Needed
-                            </p>
+                            <div class="flex items-center justify-between">
 
-                            <p class="font-bold text-gray-800 mt-1">
-                                {{ $shift->required_staff }}
-                            </p>
+                                <p class="text-xs text-gray-500">
+                                    Staff Assigned
+                                </p>
+
+                                <button onclick="viewAssignedStaff({{ $shift->id }})"
+                                        class="text-[11px] text-purple-600 hover:text-purple-800 font-medium">
+
+                                    View
+
+                                </button>
+
+                            </div>
+
+                            <div class="mt-2 flex items-end justify-between">
+
+                                <div>
+
+                                    <p class="font-bold text-gray-800 text-lg">
+                                        {{ $shift->assignments_count }}
+                                        <span class="text-sm text-gray-400">
+                                            / {{ $shift->required_staff }}
+                                        </span>
+                                    </p>
+
+                                </div>
+
+                                @php
+                                    $filled = $shift->required_staff > 0
+                                        ? ($shift->assignments_count / $shift->required_staff) * 100
+                                        : 0;
+                                @endphp
+
+                                <span class="text-xs font-medium
+                                    {{ $filled >= 100
+                                        ? 'text-green-600'
+                                        : ($filled >= 50
+                                            ? 'text-yellow-600'
+                                            : 'text-red-500') }}">
+
+                                    {{ round($filled) }}%
+
+                                </span>
+
+                            </div>
+
+                            <!-- PROGRESS BAR -->
+                            <div class="w-full h-2 bg-gray-100 rounded-full mt-3 overflow-hidden">
+
+                                <div class="
+                                    h-full rounded-full transition-all duration-500
+
+                                    {{ $filled >= 100
+                                        ? 'bg-green-500'
+                                        : ($filled >= 50
+                                            ? 'bg-yellow-400'
+                                            : 'bg-red-400') }}
+                                "
+                                style="width: {{ $filled }}%">
+                                </div>
+
+                            </div>
 
                         </div>
 
@@ -676,6 +791,32 @@
 </div>
 
 
+<!-- VIEW ASSIGNED STAFF MODAL -->
+<div id="viewStaffModal"
+     class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+
+    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl p-6">
+
+        <div class="flex items-center justify-between mb-5">
+
+            <h2 class="text-lg font-semibold">
+                Assigned Staff
+            </h2>
+
+            <button onclick="closeViewStaffModal()">
+                ✕
+            </button>
+
+        </div>
+
+        <div id="viewAssignedStaffList"
+             class="space-y-3">
+        </div>
+
+    </div>
+
+</div>
+
 <script>
 
 function openCreateShiftModal()
@@ -780,6 +921,134 @@ document.getElementById('createShiftForm')
     });
 
 });
+</script>
+<script>
+
+/*
+|--------------------------------------------------------------------------
+| SHIFT STATUS TABS
+|--------------------------------------------------------------------------
+*/
+let CURRENT_SHIFT_STATUS = 'All';
+
+
+/*
+|--------------------------------------------------------------------------
+| TAB CLICK
+|--------------------------------------------------------------------------
+*/
+document.querySelectorAll('.shift-tab')
+.forEach(tab => {
+
+    tab.addEventListener('click', function () {
+
+        /*
+        |--------------------------------------------------------------------------
+        | ACTIVE TAB UI
+        |--------------------------------------------------------------------------
+        */
+        document.querySelectorAll('.shift-tab')
+            .forEach(t => t.classList.remove('active-shift-tab'));
+
+        this.classList.add('active-shift-tab');
+
+        /*
+        |--------------------------------------------------------------------------
+        | STORE STATUS
+        |--------------------------------------------------------------------------
+        */
+        CURRENT_SHIFT_STATUS = this.dataset.status;
+
+        /*
+        |--------------------------------------------------------------------------
+        | FILTER
+        |--------------------------------------------------------------------------
+        */
+        filterShifts();
+    });
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| SEARCH FILTER
+|--------------------------------------------------------------------------
+*/
+document.getElementById('shiftSearch')
+.addEventListener('input', filterShifts);
+
+
+/*
+|--------------------------------------------------------------------------
+| MAIN FILTER FUNCTION
+|--------------------------------------------------------------------------
+*/
+function filterShifts()
+{
+    const search =
+        document.getElementById('shiftSearch')
+        .value
+        .toLowerCase();
+
+    const cards =
+        document.querySelectorAll('.shift-card');
+
+    cards.forEach(card => {
+
+        const title =
+            card.querySelector('.shift-title')
+                ?.innerText.toLowerCase() || '';
+
+        const role =
+            card.querySelector('.shift-role')
+                ?.innerText.toLowerCase() || '';
+
+        const location =
+            card.querySelector('.shift-location')
+                ?.innerText.toLowerCase() || '';
+
+        const status =
+            card.dataset.status || '';
+
+        /*
+        |--------------------------------------------------------------------------
+        | SEARCH MATCH
+        |--------------------------------------------------------------------------
+        */
+        const matchesSearch =
+
+            title.includes(search) ||
+            role.includes(search) ||
+            location.includes(search) ||
+            status.toLowerCase().includes(search);
+
+        /*
+        |--------------------------------------------------------------------------
+        | STATUS MATCH
+        |--------------------------------------------------------------------------
+        */
+        const matchesStatus =
+
+            CURRENT_SHIFT_STATUS === 'All'
+                ? true
+                : status === CURRENT_SHIFT_STATUS;
+
+        /*
+        |--------------------------------------------------------------------------
+        | TOGGLE CARD
+        |--------------------------------------------------------------------------
+        */
+        if (matchesSearch && matchesStatus) {
+
+            card.style.display = 'block';
+
+        } else {
+
+            card.style.display = 'none';
+        }
+    });
+}
+
 </script>
 <script>
     function markShiftCompleted(id)
@@ -966,16 +1235,36 @@ document.getElementById('editShiftForm')
     }
 });
 </script>
+
 <script>
-    window.openAssignShiftModal = async function (shiftId)
+
+/*
+|--------------------------------------------------------------------------
+| GLOBAL SHIFT STATE
+|--------------------------------------------------------------------------
+*/
+let SHIFT_MAX = 0;
+let SHIFT_ASSIGNED = 0;
+
+
+/*
+|--------------------------------------------------------------------------
+| OPEN ASSIGN MODAL
+|--------------------------------------------------------------------------
+*/
+window.openAssignShiftModal = async function (shiftId)
 {
-    let SHIFT_MAX = 0;
-    let SHIFT_ASSIGNED = 0;
     try {
 
         const res = await fetch(`/admin/shifts/${shiftId}/assign-data`, {
-            headers: { 'Accept': 'application/json' }
+            headers: {
+                'Accept': 'application/json'
+            }
         });
+
+        if (!res.ok) {
+            throw new Error('Failed to load shift data');
+        }
 
         const data = await res.json();
 
@@ -983,36 +1272,95 @@ document.getElementById('editShiftForm')
         const assigned = data.assigned;
         const staff = data.staff;
 
+        // STORE GLOBALLY
+        SHIFT_MAX = parseInt(shift.required_staff);
+        SHIFT_ASSIGNED = assigned.length;
+
+        // STORE SHIFT ID
         document.getElementById('assign_shift_id').value = shift.id;
 
-        // SHIFT INFO
+        /*
+        |--------------------------------------------------------------------------
+        | SHIFT INFO
+        |--------------------------------------------------------------------------
+        */
         document.getElementById('assign_shift_info').innerHTML = `
-            <strong class="text-base">${shift.title}</strong><br>
+            <div class="space-y-1">
 
-            📍 ${shift.location ?? 'N/A'}<br>
-            ⏰ ${shift.start_time} - ${shift.end_time}<br>
-            📅 ${shift.shift_date}<br>
+                <h3 class="font-semibold text-base text-gray-800">
+                    ${shift.title}
+                </h3>
 
-            👥 <span class="font-semibold">
-                Assigned: ${assigned.length} / ${shift.required_staff}
-            </span>
+                <p>📍 ${shift.location ?? 'N/A'}</p>
+
+                <p>
+                    ⏰ ${shift.start_time} - ${shift.end_time}
+                </p>
+
+                <p>
+                    📅 ${shift.shift_date}
+                </p>
+
+                <p class="mt-2">
+                    👥 Assigned:
+                    <span id="assignedCounter"
+                          class="font-bold text-purple-700">
+                        ${SHIFT_ASSIGNED}
+                    </span>
+                    / ${SHIFT_MAX}
+                </p>
+
+            </div>
         `;
 
-        // ASSIGNED STAFF
+        /*
+        |--------------------------------------------------------------------------
+        | ASSIGNED STAFF
+        |--------------------------------------------------------------------------
+        */
         document.getElementById('assigned_staff_list').innerHTML =
             assigned.length
-                ? assigned.map(a => `<div>👤 ${a.employee.user.name}</div>`).join('')
-                : '<p class="text-gray-400">No staff assigned yet</p>';
+                ? assigned.map(a => `
+                    <div class="flex items-center gap-2 p-2 border rounded-lg bg-gray-50">
 
-        // ALL STAFF WITH CHECKBOXES
+                        👤
+                        <span>${a.employee.user.name}</span>
+
+                    </div>
+                `).join('')
+                : `
+                    <p class="text-gray-400">
+                        No staff assigned yet
+                    </p>
+                `;
+
+        /*
+        |--------------------------------------------------------------------------
+        | ALL STAFF
+        |--------------------------------------------------------------------------
+        */
         document.getElementById('all_staff_list').innerHTML =
             staff.map(s => `
-                <label class="flex items-center gap-2 border p-2 rounded">
-                    <input type="checkbox" value="${s.id}" class="assign_staff_checkbox">
-                    <span>${s.user.name}</span>
+
+                <label class="flex items-center gap-3 border p-3 rounded-xl hover:bg-gray-50 cursor-pointer">
+
+                    <input type="checkbox"
+                           value="${s.id}"
+                           class="assign_staff_checkbox rounded">
+
+                    <span class="text-sm text-gray-700">
+                        ${s.user.name}
+                    </span>
+
                 </label>
+
             `).join('');
 
+        /*
+        |--------------------------------------------------------------------------
+        | OPEN MODAL
+        |--------------------------------------------------------------------------
+        */
         const modal = document.getElementById('assignShiftModal');
 
         modal.classList.remove('hidden');
@@ -1021,11 +1369,76 @@ document.getElementById('editShiftForm')
     } catch (err) {
 
         console.error(err);
-        alert('Failed to load shift assignment data');
+
+        alert(err.message || 'Failed to load assignment modal');
     }
 };
 
 
+/*
+|--------------------------------------------------------------------------
+| LIVE COUNTER UPDATE
+|--------------------------------------------------------------------------
+*/
+document.addEventListener('change', function (e)
+{
+    if (!e.target.classList.contains('assign_staff_checkbox')) {
+        return;
+    }
+
+    const checked =
+        document.querySelectorAll('.assign_staff_checkbox:checked').length;
+
+    const total = SHIFT_ASSIGNED + checked;
+
+    const counter = document.getElementById('assignedCounter');
+
+    if (!counter) return;
+
+    /*
+    |--------------------------------------------------------------------------
+    | PREVENT OVER SELECTION
+    |--------------------------------------------------------------------------
+    */
+    if (total > SHIFT_MAX) {
+
+        e.target.checked = false;
+
+        alert(`Maximum of ${SHIFT_MAX} staff allowed`);
+
+        return;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE COUNTER
+    |--------------------------------------------------------------------------
+    */
+    counter.innerText = total;
+
+    /*
+    |--------------------------------------------------------------------------
+    | COLOR WARNING
+    |--------------------------------------------------------------------------
+    */
+    if (total >= SHIFT_MAX) {
+
+        counter.classList.remove('text-purple-700');
+        counter.classList.add('text-green-700');
+
+    } else {
+
+        counter.classList.remove('text-green-700');
+        counter.classList.add('text-purple-700');
+    }
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| CLOSE MODAL
+|--------------------------------------------------------------------------
+*/
 function closeAssignShiftModal()
 {
     const modal = document.getElementById('assignShiftModal');
@@ -1033,59 +1446,328 @@ function closeAssignShiftModal()
     modal.classList.add('hidden');
     modal.classList.remove('flex');
 }
-</script>
 
-<script>
-   async function assignStaffToShift()
+
+/*
+|--------------------------------------------------------------------------
+| ASSIGN STAFF
+|--------------------------------------------------------------------------
+*/
+async function assignStaffToShift()
 {
-    const shiftId = document.getElementById('assign_shift_id').value;
+    const shiftId =
+        document.getElementById('assign_shift_id').value;
 
-    const selected = Array.from(
-        document.querySelectorAll('.assign_staff_checkbox:checked')
-    ).map(cb => cb.value);
+    const employees =
+        Array.from(
+            document.querySelectorAll('.assign_staff_checkbox:checked')
+        ).map(cb => cb.value);
 
-    // get shift limit from modal text or store globally
-    const shiftInfoText = document.getElementById('assign_shift_info').innerText;
-
-    const match = shiftInfoText.match(/Assigned:\s*(\d+)\s*\/\s*(\d+)/);
-
-    const currentAssigned = match ? parseInt(match[1]) : 0;
-    const maxAllowed = match ? parseInt(match[2]) : 999;
-
-    const totalAfterAssign = currentAssigned + selected.length;
-
-    if (totalAfterAssign > maxAllowed) {
-        alert(`You can only assign ${maxAllowed} staff total. Currently assigned: ${currentAssigned}`);
+    if (employees.length === 0) {
+        alert('Select at least one staff');
         return;
     }
 
     try {
 
         const res = await fetch(`/admin/shifts/${shiftId}/assign`, {
+
             method: 'POST',
+
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept': 'application/json'
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN':
+                    document.querySelector('meta[name="csrf-token"]').content
             },
-            body: JSON.stringify({ employees: selected })
+
+            body: JSON.stringify({
+                employees
+            })
         });
 
         const data = await res.json();
 
-        if (!res.ok) throw new Error(data.message);
+        if (!res.ok) {
+            throw new Error(data.message || 'Assignment failed');
+        }
 
         closeAssignShiftModal();
 
-        await loadShifts();
+        if (typeof loadShifts === 'function') {
+            await loadShifts();
+        } else {
+            location.reload();
+        }
 
         alert('Staff assigned successfully');
 
     } catch (err) {
 
         console.error(err);
+
         alert(err.message);
     }
 }
+
+</script>
+
+<script>
+
+async function assignStaffToShift()
+{
+    const shiftId =
+        document.getElementById('assign_shift_id').value;
+
+    const selected =
+        Array.from(
+            document.querySelectorAll('.assign_staff_checkbox:checked')
+        ).map(cb => cb.value);
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDATION
+    |--------------------------------------------------------------------------
+    */
+    if (selected.length === 0) {
+
+        alert('Select at least one staff');
+
+        return;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | CHECK LIMIT
+    |--------------------------------------------------------------------------
+    */
+    const totalAfterAssign =
+        SHIFT_ASSIGNED + selected.length;
+
+    if (totalAfterAssign > SHIFT_MAX) {
+
+        alert(
+            `Only ${SHIFT_MAX} staff allowed for this shift`
+        );
+
+        return;
+    }
+
+    try {
+
+        const res = await fetch(`/admin/shifts/${shiftId}/assign`, {
+
+            method: 'POST',
+
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN':
+                    document.querySelector('meta[name="csrf-token"]').content
+            },
+
+            body: JSON.stringify({
+                employees: selected
+            })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.message || 'Assignment failed');
+        }
+
+        closeAssignShiftModal();
+
+        /*
+        |--------------------------------------------------------------------------
+        | REFRESH
+        |--------------------------------------------------------------------------
+        */
+        if (typeof loadShifts === 'function') {
+
+            await loadShifts();
+
+        } else {
+
+            location.reload();
+        }
+
+        alert('Staff assigned successfully');
+
+    } catch (err) {
+
+        console.error(err);
+
+        alert(err.message);
+    }
+}
+
+</script>
+<script>
+
+async function viewAssignedStaff(shiftId)
+{
+    try {
+
+        const res = await fetch(`/admin/shifts/${shiftId}/assign-data`, {
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+
+        const data = await res.json();
+
+        const assigned = data.assigned;
+
+        document.getElementById('viewAssignedStaffList').innerHTML =
+    assigned.length
+        ? assigned.map(a => `
+
+            <div id="assignment-row-${a.id}"
+                 class="flex items-center justify-between border rounded-xl p-3">
+
+                <div class="flex items-center gap-3">
+
+                    <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-sm font-bold text-purple-700">
+
+                        ${a.employee.user.name.charAt(0)}
+
+                    </div>
+
+                    <div>
+
+                        <p class="font-medium text-gray-800">
+                            ${a.employee.user.name}
+                        </p>
+
+                        <p class="text-xs text-gray-500">
+                            ${a.employee.primary_role ?? 'Staff'}
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="flex items-center gap-2">
+
+                    <span class="text-xs px-3 py-1 rounded-full bg-green-100 text-green-700">
+
+                        Assigned
+
+                    </span>
+
+                    <button onclick="unassignStaff(${a.id})"
+                            class="text-xs px-3 py-1 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition">
+
+                        Unassign
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        `).join('')
+
+        : `
+
+            <div class="text-center py-10 text-gray-400">
+
+                No staff assigned yet
+
+            </div>
+
+        `;
+
+        const modal = document.getElementById('viewStaffModal');
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+    } catch (err) {
+
+        console.error(err);
+
+        alert('Failed to load assigned staff');
+    }
+}
+
+function closeViewStaffModal()
+{
+    const modal = document.getElementById('viewStaffModal');
+
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+</script>
+
+<script>
+
+async function unassignStaff(assignmentId)
+{
+    const confirmed =
+        confirm('Unassign this staff from shift?');
+
+    if (!confirmed) return;
+
+    try {
+
+        const res = await fetch(
+            `/admin/shifts/unassign/${assignmentId}`,
+            {
+                method: 'POST',
+
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN':
+                        document.querySelector('meta[name="csrf-token"]').content
+                }
+            }
+        );
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.message || 'Failed');
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | REMOVE FROM MODAL
+        |--------------------------------------------------------------------------
+        */
+        const row =
+            document.getElementById(`assignment-row-${assignmentId}`);
+
+        if (row) {
+            row.remove();
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | RELOAD SHIFT CARDS
+        |--------------------------------------------------------------------------
+        */
+        if (typeof loadShifts === 'function') {
+
+            await loadShifts();
+
+        } else {
+
+            location.reload();
+        }
+
+        alert('Staff unassigned successfully');
+
+    } catch (err) {
+
+        console.error(err);
+
+        alert(err.message);
+    }
+}
+
 </script>
 @endsection

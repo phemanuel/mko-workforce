@@ -434,13 +434,13 @@
                         <!-- DEPARTMENT -->
                         <div>
 
-                            <p class="text-xs text-gray-400">
+                            <!-- <p class="text-xs text-gray-400">
                                 Department
                             </p>
 
                             <p class="text-sm font-medium text-gray-700 mt-1">
                                 {{ $employee->department ?? 'N/A' }}
-                            </p>
+                            </p> -->
 
                         </div>
 

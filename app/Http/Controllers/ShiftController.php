@@ -16,7 +16,9 @@ class ShiftController extends Controller
     */
     public function index()
     {
-        $shifts = Shift::where('status', 'open')
+        $shifts = Shift::withCount('assignments')
+        // ->where('status', 'open')
+        ->latest()
         ->paginate(6);
 
         log_activity(
@@ -160,12 +162,38 @@ class ShiftController extends Controller
     {
         $shift = Shift::findOrFail($id);
 
-        $assigned = ShiftAssignment::with('employee.user')
-            ->where('shift_id', $id)
+        /*
+        |--------------------------------------------------------------------------
+        | ASSIGNED STAFF (ACTIVE ONLY)
+        |--------------------------------------------------------------------------
+        */
+        $assigned = ShiftAssignment::where('shift_id', $id)
+            ->where('status', 'Assigned')
+            ->with('employee.user')
             ->get();
 
-        $staff = Employee::with('user')->get();
+        /*
+        |--------------------------------------------------------------------------
+        | GET ALREADY ASSIGNED EMPLOYEE IDS
+        |--------------------------------------------------------------------------
+        */
+        $assignedEmployeeIds = $assigned->pluck('employee_id')->toArray();
 
+        /*
+        |--------------------------------------------------------------------------
+        | LOAD ONLY AVAILABLE STAFF (EXCLUDING ASSIGNED)
+        |--------------------------------------------------------------------------
+        */
+        $staff = Employee::where('primary_role', $shift->role_required)
+            ->whereNotIn('id', $assignedEmployeeIds)
+            ->with('user')
+            ->get();
+
+        /*
+        |--------------------------------------------------------------------------
+        | RESPONSE
+        |--------------------------------------------------------------------------
+        */
         return response()->json([
             'shift' => $shift,
             'assigned' => $assigned,
@@ -177,28 +205,116 @@ class ShiftController extends Controller
     {
         $shift = Shift::findOrFail($id);
 
-        $currentCount = ShiftAssignment::where('shift_id', $id)->count();
+        /*
+        |--------------------------------------------------------------------------
+        | CURRENT ACTIVE ASSIGNMENTS
+        |--------------------------------------------------------------------------
+        */
+        $currentCount = ShiftAssignment::where('shift_id', $id)
+            ->where('status', 'Assigned')
+            ->count();
 
         $incoming = count($request->employees ?? []);
 
+        /*
+        |--------------------------------------------------------------------------
+        | LIMIT CHECK
+        |--------------------------------------------------------------------------
+        */
         if (($currentCount + $incoming) > $shift->required_staff) {
+
             return response()->json([
                 'message' => 'Shift staffing limit exceeded'
             ], 422);
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | ASSIGN STAFF
+        |--------------------------------------------------------------------------
+        */
         foreach ($request->employees as $employeeId) {
 
-            ShiftAssignment::firstOrCreate([
-                'shift_id' => $id,
-                'employee_id' => $employeeId,
-            ], [
+            $assignment = ShiftAssignment::firstOrCreate(
+                [
+                    'shift_id' => $id,
+                    'employee_id' => $employeeId,
+                ],
+                [
+                    'status' => 'Assigned'
+                ]
+            );
+
+            /*
+            |--------------------------------------------------------------------------
+            | REASSIGN IF PREVIOUSLY UNASSIGNED
+            |--------------------------------------------------------------------------
+            */
+            if ($assignment->status !== 'Assigned') {
+
+                $assignment->update([
+                    'status' => 'Assigned'
+                ]);
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | UPDATE SHIFT STATUS
+        |--------------------------------------------------------------------------
+        */
+        $activeAssignments = ShiftAssignment::where('shift_id', $id)
+            ->where('status', 'Assigned')
+            ->count();
+
+        if ($activeAssignments > 0) {
+
+            $shift->update([
                 'status' => 'Assigned'
             ]);
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | RESPONSE
+        |--------------------------------------------------------------------------
+        */
         return response()->json([
-            'message' => 'Staff assigned successfully'
+            'message' => 'Staff assigned successfully',
+            'active_assignments' => $activeAssignments,
+            'shift_status' => $shift->status
         ]);
     }
+
+    public function unassign($assignmentId)
+    {
+        $assignment = ShiftAssignment::findOrFail($assignmentId);
+
+        $shiftId = $assignment->shift_id;
+
+        // remove assignment completely
+        $assignment->delete();
+
+        /*
+        |--------------------------------------------------------------------------
+        | UPDATE SHIFT STATUS BASED ON REMAINING ASSIGNMENTS
+        |--------------------------------------------------------------------------
+        */
+        $activeAssignments = ShiftAssignment::where('shift_id', $shiftId)
+            ->where('status', 'Assigned')
+            ->count();
+
+        $shift = Shift::findOrFail($shiftId);
+
+        $shift->update([
+            'status' => $activeAssignments > 0 ? 'Assigned' : 'Open'
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Staff unassigned successfully',
+            'remaining_assigned' => $activeAssignments
+        ]);
+    }
+    
 }
