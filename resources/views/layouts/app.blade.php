@@ -135,7 +135,9 @@
     </div>
 
 </div>
-
+<!-- TOAST CONTAINER -->
+<div id="toastContainer"
+     class="fixed top-5 right-5 z-[9999] space-y-3"></div>
 </body>
 </html>
 <script>
@@ -156,4 +158,48 @@
     if (window.history.replaceState) {
         window.history.replaceState(null, null, window.location.href);
     }
+</script>
+
+<script>
+function showToast(message, type = 'success') {
+
+    const container = document.getElementById('toastContainer');
+
+    const colors = {
+        success: 'bg-green-600',
+        error: 'bg-red-600',
+        warning: 'bg-yellow-600',
+        info: 'bg-blue-600'
+    };
+
+    const icons = {
+        success: '✅',
+        error: '❌',
+        warning: '⚠️',
+        info: 'ℹ️'
+    };
+
+    const toast = document.createElement('div');
+
+    toast.className = `
+        ${colors[type] ?? colors.success}
+        text-white px-4 py-3 rounded-xl shadow-lg
+        flex items-center gap-2
+        animate-fade-in
+        min-w-[250px]
+    `;
+
+    toast.innerHTML = `
+        <span>${icons[type] ?? 'ℹ️'}</span>
+        <span class="text-sm font-medium">${message}</span>
+    `;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-x-3');
+        toast.style.transition = 'all .4s ease';
+        setTimeout(() => toast.remove(), 400);
+    }, 3000);
+}
 </script>

@@ -10,6 +10,7 @@ use App\Http\Controllers\AdminApplicationController;
 use App\Http\Controllers\AdminReviewController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\StaffShiftController;
 
 
 
@@ -138,6 +139,22 @@ use App\Http\Controllers\AttendanceController;
         //--------Attendance Routes
          Route::get('/attendance', [AttendanceController::class, 'index'])
         ->name('attendance.index');
+
+    });
+
+    Route::prefix('staff')
+    ->middleware(['auth'])
+    ->name('staff.')
+    ->group(function () {
+
+        Route::get('/my-shifts', [StaffShiftController::class, 'index'])
+            ->name('shifts.index');
+
+        Route::post('/my-shifts/{id}/accept', [StaffShiftController::class, 'accept'])
+            ->name('shifts.accept');
+
+        Route::post('/my-shifts/{id}/decline', [StaffShiftController::class, 'decline'])
+            ->name('shifts.decline');
 
     });
     

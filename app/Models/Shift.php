@@ -17,6 +17,12 @@ class Shift extends Model
         'required_staff',
         'hourly_rate',
         'status',
+        'supervisor_id',
+        'instructions',
+        'notes',
+        'latitude',
+        'longitude',
+        'attachment',
     ];
 
     /*
@@ -45,5 +51,10 @@ class Shift extends Model
     public function attendances()
     {
         return $this->hasMany(Attendance::class);
+    }
+
+    public function supervisor()
+    {
+        return $this->belongsTo(User::class, 'supervisor_id');
     }
 }

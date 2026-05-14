@@ -184,23 +184,41 @@
                 <!-- TOP -->
                 <div class="flex items-start justify-between gap-4">
 
-                    <div>
+                    <!-- LEFT -->
+                    <div class="min-w-0 flex-1">
 
-                        <h3 class="shift-title text-lg font-bold text-gray-900">
+                        <h3 class="shift-title text-lg font-bold text-gray-900 truncate">
                             {{ $shift->title }}
                         </h3>
 
-                        <p class="shift-role text-sm text-gray-500 mt-1">
+                        <p class="shift-role text-sm text-gray-500 mt-1 truncate">
                             {{ $shift->role_required }}
                         </p>
 
                     </div>
 
-                    <span class="shift-status px-3 py-1 rounded-full text-xs font-semibold {{ $badgeColor }}">
+                    <!-- RIGHT -->
+                    <div class="flex items-center gap-2 flex-shrink-0">
 
-                        {{ $shift->status }}
+                        <!-- MORE INFO -->
+                        <button onclick="openShiftDetails({{ $shift->id }})"
+                            class="flex items-center gap-1 text-xs font-medium text-gray-700
+                                border border-gray-200 bg-white/70
+                                hover:bg-gray-100 hover:border-gray-300
+                                px-2.5 py-1 rounded-lg transition">
 
-                    </span>
+                            ℹ️ <span>Info</span>
+
+                        </button>
+
+                        <!-- STATUS -->
+                        <span class="shift-status px-3 py-1 rounded-full text-xs font-semibold {{ $badgeColor }}">
+
+                            {{ $shift->status }}
+
+                        </span>
+
+                    </div>
 
                 </div>
 
@@ -382,17 +400,18 @@
                             hover:bg-green-100 hover:border-green-300
                             px-3 py-1.5 rounded-lg transition">
 
-                        ✅ <span>Complete</span>
+                        ✅ <span>Complete Shift</span>
 
                     </button>
 
                 @else
 
                     <span class="text-xs px-3 py-1 rounded-lg bg-gray-100 text-gray-500 border border-gray-200">
-                        Completed
+                        Shift Completed
                     </span>
 
                 @endif
+                
 
             </div>
 
@@ -417,7 +436,7 @@
             </div>
 
         @endforelse
-
+        <p>{{$shifts->links()}}</p>
     </div>
 
 </div>
@@ -429,264 +448,206 @@
 <div id="createShiftModal"
      class="fixed inset-0 bg-black/50 hidden z-50 items-center justify-center p-4">
 
-    <div class="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden">
+    <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
 
         <!-- HEADER -->
         <div class="flex items-center justify-between px-6 py-4 border-b">
-
-            <h2 class="text-lg font-bold">
-                Create Shift
-            </h2>
+            <h2 class="text-lg font-bold">Create Shift</h2>
 
             <button onclick="closeCreateShiftModal()"
                     class="text-gray-500 hover:text-black text-xl">
-
                 ✕
-
             </button>
-
         </div>
 
-        <!-- FORM -->
-        <form id="createShiftForm"class="p-6 space-y-5">
+        <!-- BODY (SCROLLABLE) -->
+        <form id="createShiftForm"
+              enctype="multipart/form-data"
+              class="p-6 space-y-5 overflow-y-auto flex-1">
 
+            <!-- GRID -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                <!-- TITLE -->
                 <div>
-
-                    <label class="text-sm font-medium text-gray-700">
-                        Shift Title
-                    </label>
-
-                    <input type="text"
-                        id="shift_title"
-                        name="title"
-                        class="w-full border rounded-xl p-3 mt-1">
-
+                    <label class="text-sm font-medium">Shift Title</label>
+                    <input id="shift_title" name="title"
+                           class="w-full border rounded-xl p-3 mt-1">
                 </div>
 
-                <!-- ROLE -->
                 <div>
-
-                    <label class="text-sm font-medium text-gray-700">
-                        Role Required
-                    </label>
-
-                    <select id="shift_role_required"
-                            name="role_required"
+                    <label class="text-sm font-medium">Role Required</label>
+                    <select id="shift_role_required" name="role_required"
                             class="w-full border rounded-xl p-3 mt-1">
-
                         <option value="">Select Role</option>
-
-                        <option value="SIA Security">
-                            SIA Security
-                        </option>
-
-                        <option value="Cleaning Services">
-                            Cleaning Services
-                        </option>
-
-                        <option value="Companion Support">
-                            Companion Support
-                        </option>
-
-                        <option value="Back Support Services">
-                            Back Support Services
-                        </option>
-
+                        <option value="SIA Security">SIA Security</option>
+                        <option value="Cleaning Services">Cleaning Services</option>
+                        <option value="Companion Support">Companion Support</option>
+                        <option value="Back Support Services">Back Support Services</option>
                     </select>
-
                 </div>
 
-                <!-- DATE -->
                 <div>
-
-                    <label class="text-sm font-medium text-gray-700">
-                        Shift Date
-                    </label>
-
-                    <input type="date"
-                        id="shift_date"
-                        name="shift_date"
-                        class="w-full border rounded-xl p-3 mt-1">
-
+                    <label class="text-sm font-medium">Supervisor</label>
+                    <select id="shift_supervisor_id" name="supervisor_id"
+                            class="w-full border rounded-xl p-3 mt-1">
+                        <option value="">Select Supervisor (Admin fallback allowed)</option>
+                    </select>
                 </div>
 
-                <!-- LOCATION -->
                 <div>
-
-                    <label class="text-sm font-medium text-gray-700">
-                        Location
-                    </label>
-
-                    <input type="text"
-                        id="shift_location"
-                        name="location"
-                        class="w-full border rounded-xl p-3 mt-1">
-
+                    <label class="text-sm font-medium">Shift Date</label>
+                    <input type="date" id="shift_date" name="shift_date"
+                           class="w-full border rounded-xl p-3 mt-1">
                 </div>
 
-                <!-- START -->
                 <div>
-
-                    <label class="text-sm font-medium text-gray-700">
-                        Start Time
-                    </label>
-
-                    <input type="time"
-                        id="shift_start_time"
-                        name="start_time"
-                        class="w-full border rounded-xl p-3 mt-1">
-
+                    <label class="text-sm font-medium">Location</label>
+                    <input id="shift_location" name="location"
+                           class="w-full border rounded-xl p-3 mt-1">
                 </div>
 
-                <!-- END -->
                 <div>
-
-                    <label class="text-sm font-medium text-gray-700">
-                        End Time
-                    </label>
-
-                    <input type="time"
-                        id="shift_end_time"
-                        name="end_time"
-                        class="w-full border rounded-xl p-3 mt-1">
-
+                    <label class="text-sm font-medium">Start Time</label>
+                    <input type="time" id="shift_start_time" name="start_time"
+                           class="w-full border rounded-xl p-3 mt-1">
                 </div>
 
-                <!-- STAFF -->
                 <div>
-
-                    <label class="text-sm font-medium text-gray-700">
-                        Required Staff
-                    </label>
-
-                    <input type="number"
-                        id="shift_required_staff"
-                        name="required_staff"
-                        class="w-full border rounded-xl p-3 mt-1">
-
+                    <label class="text-sm font-medium">End Time</label>
+                    <input type="time" id="shift_end_time" name="end_time"
+                           class="w-full border rounded-xl p-3 mt-1">
                 </div>
 
-                <!-- RATE -->
                 <div>
+                    <label class="text-sm font-medium">Required Staff</label>
+                    <input type="number" id="shift_required_staff" name="required_staff"
+                           class="w-full border rounded-xl p-3 mt-1">
+                </div>
 
-                    <label class="text-sm font-medium text-gray-700">
-                        Hourly Rate (£)
-                    </label>
+                <div>
+                    <label class="text-sm font-medium">Hourly Rate</label>
+                    <input type="number" step="0.01" id="shift_hourly_rate" name="hourly_rate"
+                           class="w-full border rounded-xl p-3 mt-1">
+                </div>
 
-                    <input type="number"
-                        step="0.01"
-                        id="shift_hourly_rate"
-                        name="hourly_rate"
-                        class="w-full border rounded-xl p-3 mt-1">
-
+                <div class="md:col-span-2">
+                    <label class="text-sm font-medium">Attachment</label>
+                    <input type="file" id="shift_attachment" name="attachment"
+                           class="w-full border rounded-xl p-3 mt-1">
                 </div>
 
             </div>
 
-            <!-- DESCRIPTION -->
+            <!-- TEXT AREAS -->
             <div>
+                <label class="text-sm font-medium">Instructions</label>
+                <textarea id="shift_instructions" name="instructions"
+                          rows="3"
+                          class="w-full border rounded-xl p-3 mt-1"></textarea>
+            </div>
 
-                <label class="text-sm font-medium text-gray-700">
-                    Description
-                </label>
-
-                <textarea id="shift_description"
-                        name="description"
-                        rows="4"
-                        class="w-full border rounded-xl p-3 mt-1"></textarea>
-
+            <div>
+                <label class="text-sm font-medium">Notes</label>
+                <textarea id="shift_notes" name="notes"
+                          rows="3"
+                          class="w-full border rounded-xl p-3 mt-1"></textarea>
             </div>
 
             <!-- BUTTON -->
-            <div class="flex justify-end">
-
+            <div class="flex justify-end pt-2">
                 <button type="submit"
                         class="bg-black hover:bg-gray-800 text-white px-6 py-3 rounded-xl">
-
                     Save Shift
-
                 </button>
-
             </div>
 
         </form>
 
     </div>
-
 </div>
 
 <!-- EDIT SHIFT MODAL -->
 <div id="editShiftModal"
-     class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+     class="fixed inset-0 bg-black/50 hidden z-50 items-center justify-center p-4">
 
-    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl p-6">
+    <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
 
-        <div class="flex justify-between items-center mb-4">
+        <!-- HEADER -->
+        <div class="flex items-center justify-between px-6 py-4 border-b">
             <h2 class="text-lg font-semibold">Edit Shift</h2>
 
-            <button onclick="closeEditShiftModal()" class="text-gray-500">
+            <button onclick="closeEditShiftModal()"
+                    class="text-gray-500 hover:text-black">
                 ✕
             </button>
         </div>
 
-        <form id="editShiftForm">
+        <!-- BODY (SCROLLABLE) -->
+        <form id="editShiftForm"
+              class="p-6 overflow-y-auto flex-1 space-y-5">
 
-            <input type="hidden" id="edit_shift_id">
+            <input type="hidden" id="edit_shift_id" name="shift_id">
 
-            <div class="grid grid-cols-2 gap-4">
+            <!-- GRID -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                <div>
-                    <label class="text-sm">Title</label>
-                    <input id="edit_title" class="w-full border p-2 rounded">
-                </div>
+                <input id="edit_title" name="title"
+                       class="w-full border p-3 rounded-xl"
+                       placeholder="Title">
 
-                <div>
-                    <label class="text-sm">Date</label>
-                    <input id="edit_shift_date" type="date" class="w-full border p-2 rounded">
-                </div>
+                <input id="edit_shift_date" name="shift_date"
+                       type="date"
+                       class="w-full border p-3 rounded-xl">
 
-                <div>
-                    <label class="text-sm">Start Time</label>
-                    <input id="edit_start_time" type="time" class="w-full border p-2 rounded">
-                </div>
+                <input id="edit_start_time" name="start_time"
+                       type="time"
+                       class="w-full border p-3 rounded-xl">
 
-                <div>
-                    <label class="text-sm">End Time</label>
-                    <input id="edit_end_time" type="time" class="w-full border p-2 rounded">
-                </div>
+                <input id="edit_end_time" name="end_time"
+                       type="time"
+                       class="w-full border p-3 rounded-xl">
 
-                <div>
-                    <label class="text-sm">Location</label>
-                    <input id="edit_location" class="w-full border p-2 rounded">
-                </div>
+                <input id="edit_location" name="location"
+                       class="w-full border p-3 rounded-xl"
+                       placeholder="Location">
 
-                <div>
-                    <label class="text-sm">Required Staff</label>
-                    <input id="edit_required_staff" type="number" class="w-full border p-2 rounded">
-                </div>
+                <input id="edit_required_staff" name="required_staff"
+                       type="number"
+                       class="w-full border p-3 rounded-xl">
 
-                <div>
-                    <label class="text-sm">Hourly Rate</label>
-                    <input id="edit_hourly_rate" class="w-full border p-2 rounded">
-                </div>
+                <input id="edit_hourly_rate" name="hourly_rate"
+                       class="w-full border p-3 rounded-xl">
 
-                <div>
-                    <label class="text-sm">Status</label>
-                    <select id="edit_status" class="w-full border p-2 rounded">
-                        <option value="Open">Open</option>
-                        <option value="Assigned">Assigned</option>
-                        <option value="Completed">Completed</option>
-                        <option value="Cancelled">Cancelled</option>
-                    </select>
-                </div>
+                <select id="edit_supervisor_id" name="supervisor_id"
+                        class="w-full border p-3 rounded-xl">
+                    <option value="">Select Supervisor (Admin fallback allowed)</option>
+                </select>
+
+                <select id="edit_status" name="status"
+                        class="w-full border p-3 rounded-xl">
+                    <option value="Open">Open</option>
+                    <option value="Assigned">Assigned</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
+                </select>
 
             </div>
 
-            <button class="mt-5 bg-black text-white px-4 py-2 rounded w-full">
+            <!-- TEXT AREAS -->
+            <textarea id="edit_instructions" name="instructions"
+                      class="w-full border p-3 rounded-xl"
+                      placeholder="Instructions"></textarea>
+
+            <textarea id="edit_notes" name="notes"
+                      class="w-full border p-3 rounded-xl"
+                      placeholder="Notes"></textarea>
+
+            <!-- BUTTON -->
+            <button type="submit"
+                    class="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-800">
+
                 Save Changes
+
             </button>
 
         </form>
@@ -817,30 +778,63 @@
 
 </div>
 
+<!-- SHIFT INSPECTOR PANEL -->
+<div id="shiftInspector"
+     class="fixed inset-0 z-50 hidden">
+
+    <!-- BACKDROP -->
+    <div class="absolute inset-0 bg-black/40"
+         onclick="closeShiftInspector()"></div>
+
+    <!-- PANEL -->
+    <div class="absolute right-0 top-0 h-full w-full md:w-[520px]
+                bg-white shadow-2xl transform transition-transform duration-300">
+
+        <!-- HEADER -->
+        <div class="flex items-center justify-between px-5 py-4 border-b">
+
+            <h2 class="text-lg font-bold text-gray-800">
+                Shift Inspector
+            </h2>
+
+            <button onclick="closeShiftInspector()"
+                    class="text-gray-500 hover:text-black text-xl">
+                ✕
+            </button>
+
+        </div>
+
+        <!-- CONTENT -->
+        <div id="shiftInspectorContent"
+             class="p-5 space-y-4 overflow-y-auto h-[calc(100%-60px)]">
+
+            <!-- JS injects here -->
+
+        </div>
+
+    </div>
+</div>
+
 <script>
 
 function openCreateShiftModal()
 {
-    document.getElementById('createShiftModal')
-        .classList.remove('hidden');
-
-    document.getElementById('createShiftModal')
-        .classList.add('flex');
+    const modal = document.getElementById('createShiftModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
 }
 
 function closeCreateShiftModal()
 {
-    document.getElementById('createShiftModal')
-        .classList.add('hidden');
-
-    document.getElementById('createShiftModal')
-        .classList.remove('flex');
+    const modal = document.getElementById('createShiftModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
 }
 
 
 /*
 |--------------------------------------------------------------------------
-| CREATE SHIFT AJAX
+| CREATE SHIFT AJAX (FULL FIXED VERSION)
 |--------------------------------------------------------------------------
 */
 document.getElementById('createShiftForm')
@@ -848,53 +842,40 @@ document.getElementById('createShiftForm')
 
     e.preventDefault();
 
-    const form = e.target;
-    const formData = new FormData(form);
+    const formData = new FormData(this);
 
     try {
 
-        const response = await fetch("{{ route('shifts.store') }}", {
-
+        const res = await fetch("{{ route('shifts.store') }}", {
             method: 'POST',
-
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
                 'Accept': 'application/json'
             },
-
             body: formData
         });
 
-        const data = await response.json();
+        const data = await res.json();
 
-        if (!response.ok) {
-            throw new Error(data.message || 'Unable to create shift');
+        if (!res.ok || !data.success) {
+            throw new Error(data.message || 'Failed to create shift');
         }
 
-        /*
-        |-----------------------------------------
-        | CLEAN REFRESH (NO DUPLICATION BUGS)
-        |-----------------------------------------
-        */
-        await loadShifts(); // 🔥 refresh entire list properly
-
         closeCreateShiftModal();
+        this.reset();
 
-        form.reset();
+        location.reload(); // keeps it simple & safe
 
-        alert('Shift created successfully');
+        showToast(data.message || 'Shift created successfully', 'success');
 
-    }
-    catch (error) {
-
-        console.error(error);
-
-        alert(error.message);
+    } catch (error) {
+        showToast(error.message, 'error');
     }
 
 });
 
 </script>
+
 <script>
     document.getElementById('shiftSearch')
 .addEventListener('input', function () {
@@ -922,6 +903,7 @@ document.getElementById('createShiftForm')
 
 });
 </script>
+
 <script>
 
 /*
@@ -1050,6 +1032,7 @@ function filterShifts()
 }
 
 </script>
+
 <script>
     function markShiftCompleted(id)
 {
@@ -1107,14 +1090,11 @@ async function confirmCompleteShift()
 </script>
 
 <script>
-    
+
 /*
 |--------------------------------------------------------------------------
 | OPEN EDIT SHIFT MODAL
 |--------------------------------------------------------------------------
-| - Fetch shift
-| - Populate modal
-| - Open modal safely
 */
 window.openEditShiftModal = async function (id)
 {
@@ -1126,19 +1106,16 @@ window.openEditShiftModal = async function (id)
             }
         });
 
-        if (!response.ok) {
+        const data = await response.json();
+
+        if (!response.ok || !data) {
             throw new Error('Unable to load shift data');
         }
 
-        const shift = await response.json();
+        const shift = data.shift ?? data;
 
-        console.log('EDIT SHIFT DATA:', shift);
-
-        // =========================
-        // FILL FORM FIELDS
-        // =========================
+        // Fill fields
         document.getElementById('edit_shift_id').value = shift.id ?? '';
-
         document.getElementById('edit_title').value = shift.title ?? '';
         document.getElementById('edit_shift_date').value = shift.shift_date ?? '';
         document.getElementById('edit_start_time').value = shift.start_time ?? '';
@@ -1148,11 +1125,11 @@ window.openEditShiftModal = async function (id)
         document.getElementById('edit_hourly_rate').value = shift.hourly_rate ?? '';
         document.getElementById('edit_status').value = shift.status ?? 'Open';
 
-        // =========================
-        // OPEN MODAL
-        // =========================
-        const modal = document.getElementById('editShiftModal');
+        document.getElementById('edit_instructions').value = shift.instructions ?? '';
+        document.getElementById('edit_notes').value = shift.notes ?? '';
 
+        // Open modal
+        const modal = document.getElementById('editShiftModal');
         modal.classList.remove('hidden');
         modal.classList.add('flex');
 
@@ -1166,13 +1143,12 @@ window.openEditShiftModal = async function (id)
 
 /*
 |--------------------------------------------------------------------------
-| CLOSE EDIT MODAL
+| CLOSE MODAL
 |--------------------------------------------------------------------------
 */
 function closeEditShiftModal()
 {
     const modal = document.getElementById('editShiftModal');
-
     modal.classList.add('hidden');
     modal.classList.remove('flex');
 }
@@ -1180,60 +1156,64 @@ function closeEditShiftModal()
 
 /*
 |--------------------------------------------------------------------------
-| SUBMIT UPDATE SHIFT (AJAX)
+| UPDATE SHIFT (FIXED LARAVEL FORM DATA PATTERN)
 |--------------------------------------------------------------------------
 */
 document.getElementById('editShiftForm')
-.addEventListener('submit', async function (e)
-{
+.addEventListener('submit', async function (e) {
+
     e.preventDefault();
 
     const id = document.getElementById('edit_shift_id').value;
 
-    const payload = {
-        title: document.getElementById('edit_title').value,
-        shift_date: document.getElementById('edit_shift_date').value,
-        start_time: document.getElementById('edit_start_time').value,
-        end_time: document.getElementById('edit_end_time').value,
-        location: document.getElementById('edit_location').value,
-        required_staff: document.getElementById('edit_required_staff').value,
-        hourly_rate: document.getElementById('edit_hourly_rate').value,
-        status: document.getElementById('edit_status').value,
-    };
+    const formData = new FormData();
+
+    formData.append('_method', 'PUT'); // 🔥 Laravel fix
+
+    formData.append('title', document.getElementById('edit_title').value);
+    formData.append('shift_date', document.getElementById('edit_shift_date').value);
+    formData.append('start_time', document.getElementById('edit_start_time').value);
+    formData.append('end_time', document.getElementById('edit_end_time').value);
+    formData.append('location', document.getElementById('edit_location').value);
+    formData.append('required_staff', document.getElementById('edit_required_staff').value);
+    formData.append('hourly_rate', document.getElementById('edit_hourly_rate').value);
+    formData.append('status', document.getElementById('edit_status').value);
+
+    formData.append('instructions', document.getElementById('edit_instructions')?.value || '');
+    formData.append('notes', document.getElementById('edit_notes')?.value || '');
 
     try {
 
-        const response = await fetch(`/admin/shifts/${id}`, {
-            method: 'PUT',
+        const res = await fetch(`/admin/shifts/${id}`, {
+            method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
             },
-            body: JSON.stringify(payload)
+            body: formData
         });
 
-        const data = await response.json();
+        const data = await res.json();
 
-        if (!response.ok) {
-            throw new Error(data.message || 'Shift update failed');
+        if (!res.ok || !data.success) {
+            throw new Error(data.message || 'Update failed');
         }
 
-        // =========================
-        // SUCCESS FLOW
-        // =========================
         closeEditShiftModal();
 
-        location.reload(); // 🔥 refresh list instantly
+        if (typeof loadShifts === 'function') {
+            await loadShifts();
+        } else {
+            location.reload();
+        }
 
-        alert('Shift updated successfully');
+        showToast('Shift updated successfully', 'success');
 
     } catch (error) {
-
-        console.error(error);
-        alert(error.message);
+        showToast(error.message, 'error');
     }
 });
+
 </script>
 
 <script>
@@ -1767,6 +1747,117 @@ async function unassignStaff(assignmentId)
 
         alert(err.message);
     }
+}
+
+</script>
+
+<script>
+
+window.openShiftDetails = async function(id)
+{
+    try {
+
+        const res = await fetch(`/admin/shifts/${id}`, {
+            headers: { 'Accept': 'application/json' }
+        });
+
+        const data = await res.json();
+        const shift = data.shift ?? data;
+
+        const assigned = shift.assignments || [];
+
+        document.getElementById('shiftInspectorContent').innerHTML = `
+
+            <!-- TITLE -->
+            <div>
+                <h3 class="text-xl font-bold text-gray-900">
+                    ${shift.title}
+                </h3>
+
+                <p class="text-sm text-gray-500">
+                    ${shift.role_required}
+                </p>
+            </div>
+
+            <!-- BADGE -->
+            <div>
+                <span class="px-3 py-1 text-xs rounded-full
+                    ${shift.status === 'Open' ? 'bg-blue-100 text-blue-700' :
+                      shift.status === 'Assigned' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-green-100 text-green-700'}">
+
+                    ${shift.status}
+                </span>
+            </div>
+
+            <!-- DETAILS -->
+            <div class="grid grid-cols-2 gap-3 text-sm">
+
+                <div>📅 <b>Date:</b> ${shift.shift_date}</div>
+                <div>⏰ <b>Time:</b> ${shift.start_time} - ${shift.end_time}</div>
+                <div>📍 <b>Location:</b> ${shift.location ?? 'N/A'}</div>
+                <div>👥 <b>Required:</b> ${shift.required_staff}</div>
+
+            </div>
+
+            <!-- SUPERVISOR -->
+            <div class="bg-gray-50 p-3 rounded-xl text-sm">
+                <b>Supervisor:</b>
+                ${shift.supervisor?.name ?? 'Not assigned'}
+            </div>
+
+            <!-- INSTRUCTIONS -->
+            ${shift.instructions ? `
+                <div>
+                    <h4 class="font-semibold">Instructions</h4>
+                    <p class="text-sm text-gray-600">${shift.instructions}</p>
+                </div>
+            ` : ''}
+
+            <!-- NOTES -->
+            ${shift.notes ? `
+                <div>
+                    <h4 class="font-semibold">Notes</h4>
+                    <p class="text-sm text-gray-600">${shift.notes}</p>
+                </div>
+            ` : ''}
+
+            <!-- ASSIGNED STAFF -->
+            <div>
+                <h4 class="font-semibold mb-2">
+                    Assigned Staff (${assigned.length})
+                </h4>
+
+                <div class="space-y-2">
+                    ${
+                        assigned.length
+                        ? assigned.map(a => `
+                            <div class="flex items-center justify-between p-2 border rounded-lg">
+                                <span>👤 ${a.employee.user.name}</span>
+                                <span class="text-xs text-gray-500">${a.status}</span>
+                            </div>
+                        `).join('')
+                        : `<p class="text-sm text-gray-400">No staff assigned</p>`
+                    }
+                </div>
+            </div>
+
+        `;
+
+        document.getElementById('shiftInspector')
+            .classList.remove('hidden');
+
+    } catch (err) {
+
+        console.error(err);
+        alert('Failed to load shift details');
+    }
+};
+
+function closeShiftInspector()
+{
+    document.getElementById('shiftInspector')
+        .classList.add('hidden');
 }
 
 </script>

@@ -63,7 +63,13 @@ class Employee extends Model
         return $this->belongsToMany(
             Shift::class,
             'shift_assignments'
-        );
+        )->withPivot('status')
+        ->withTimestamps();
+    }
+
+    public function assignments()
+    {
+        return $this->hasMany(ShiftAssignment::class);
     }
     
 }

@@ -58,8 +58,37 @@ class ShiftController extends Controller
                 'required_staff' => 'nullable|integer',
                 'hourly_rate' => 'nullable|numeric',
                 'description' => 'nullable|string',
+                'supervisor_id' => 'nullable|integer',
+                'instructions' => 'nullable|string',
+                'notes' => 'nullable|string',
+                'attachment' => 'nullable|file|max:5120',
             ]);
 
+            /*
+            |--------------------------------------------------------------------------
+            | HANDLE FILE UPLOAD
+            |--------------------------------------------------------------------------
+            */
+            $attachmentPath = null;
+
+            if ($request->hasFile('attachment')) {
+                $attachmentPath = $request->file('attachment')
+                    ->store('shifts/attachments', 'public');
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | FALLBACK SUPERVISOR (ADMIN IF EMPTY)
+            |--------------------------------------------------------------------------
+            */
+            $supervisorId = $validated['supervisor_id']
+                ?? auth()->id();
+
+            /*
+            |--------------------------------------------------------------------------
+            | CREATE SHIFT
+            |--------------------------------------------------------------------------
+            */
             $shift = Shift::create([
                 'title' => $validated['title'],
                 'role_required' => $validated['role_required'],
@@ -70,20 +99,26 @@ class ShiftController extends Controller
                 'required_staff' => $validated['required_staff'] ?? 1,
                 'hourly_rate' => $validated['hourly_rate'] ?? 0,
                 'description' => $validated['description'] ?? null,
+
+                'supervisor_id' => $supervisorId,
+                'instructions' => $validated['instructions'] ?? null,
+                'notes' => $validated['notes'] ?? null,
+                'attachment' => $attachmentPath,
+
                 'status' => 'Open',
             ]);
 
             log_activity(
-                'shift_saved',
-                'Shifts saved',
-                'A new shift has been created by ' . auth()->user()->name
+                'shift_created',
+                'Shift created',
+                'New shift created by ' . auth()->user()->name
             );
 
             return response()->json([
                 'success' => true,
                 'message' => 'Shift created successfully',
                 'shift' => $shift
-            ], 201);            
+            ], 201);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
 
@@ -108,9 +143,15 @@ class ShiftController extends Controller
      */
     public function show($id)
     {
-        $shift = Shift::findOrFail($id);
+        $shift = Shift::with([
+            'assignments.employee.user',
+            'supervisor'
+        ])->findOrFail($id);
 
-        return response()->json($shift);
+        return response()->json([
+            'success' => true,
+            'shift' => $shift
+        ]);
     }
 
     /**
@@ -128,10 +169,24 @@ class ShiftController extends Controller
     {
         $shift = Shift::findOrFail($id);
 
-        $shift->update($request->all());
+        $validated = $request->validate([
+            'title' => 'required|string',
+            'shift_date' => 'required|date',
+            'start_time' => 'required',
+            'end_time' => 'required',
+            'location' => 'nullable|string',
+            'required_staff' => 'nullable|integer',
+            'hourly_rate' => 'nullable|numeric',
+            'status' => 'required|string',
+            'instructions' => 'nullable|string',
+            'notes' => 'nullable|string',
+        ]);
+
+        $shift->update($validated);
 
         return response()->json([
             'success' => true,
+            'message' => 'Shift updated successfully',
             'shift' => $shift
         ]);
     }
