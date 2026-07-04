@@ -10,15 +10,27 @@ class AttendanceController extends Controller
 {
     public function index()
     {
-        $shifts = Shift::with([
-            'assignments.employee.user',
-            'attendances'
+        $attendances = Attendance::with([
+            'employee.user',
+            'shift',
+            'shift.supervisor'
         ])
-        ->where('status', 'Assigned')
         ->latest()
-        ->get();
+        ->paginate(20);
 
-        return view('admin.attendance.index', compact('shifts'));
+        return view('admin.attendance.index', [
+
+            'attendances' => $attendances,
+
+            'pendingCount' => Attendance::where('status','Pending')->count(),
+
+            'checkedInCount' => Attendance::where('status','Checked In')->count(),
+
+            'completedCount' => Attendance::where('status','Completed')->count(),
+
+            'lateCount' => Attendance::where('status','Late')->count(),
+
+        ]);
     }
 
     /*
@@ -104,4 +116,22 @@ class AttendanceController extends Controller
             'message' => 'Checked out successfully'
         ]);
     }
+
+    public function show(Attendance $attendance)
+    {
+        $attendance->load([
+            'employee.user',
+            'shift.supervisor'
+        ]);
+
+        return response()->json([
+            'attendance' => $attendance,
+            'hours_worked' => $attendance->check_in_time && $attendance->check_out_time
+                ? \Carbon\Carbon::parse($attendance->check_in_time)
+                    ->diff(\Carbon\Carbon::parse($attendance->check_out_time))
+                    ->format('%hh %Im')
+                : '--'
+        ]);
+    }
+    
 }

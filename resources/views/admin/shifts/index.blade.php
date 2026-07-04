@@ -436,7 +436,7 @@
             </div>
 
         @endforelse
-        <p>{{$shifts->links()}}</p>
+        
     </div>
 
 </div>

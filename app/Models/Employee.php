@@ -71,5 +71,10 @@ class Employee extends Model
     {
         return $this->hasMany(ShiftAssignment::class);
     }
+
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
+    }
     
 }

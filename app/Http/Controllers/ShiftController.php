@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Models\Shift;
 use App\Models\ShiftAssignment;
 use App\Models\Employee;
+use App\Models\Attendance;
 
 class ShiftController extends Controller
 {
@@ -19,7 +21,8 @@ class ShiftController extends Controller
         $shifts = Shift::withCount('assignments')
         // ->where('status', 'open')
         ->latest()
-        ->paginate(6);
+        ->get();
+        // ->paginate(6);
 
         log_activity(
             'shift_viewed',
@@ -258,6 +261,11 @@ class ShiftController extends Controller
 
     public function assign(Request $request, $id)
     {
+        $request->validate([
+            'employees' => 'required|array|min:1',
+            'employees.*' => 'exists:employees,id',
+        ]);
+
         $shift = Shift::findOrFail($id);
 
         /*
@@ -269,7 +277,7 @@ class ShiftController extends Controller
             ->where('status', 'Assigned')
             ->count();
 
-        $incoming = count($request->employees ?? []);
+        $incoming = count($request->employees);
 
         /*
         |--------------------------------------------------------------------------
@@ -279,20 +287,21 @@ class ShiftController extends Controller
         if (($currentCount + $incoming) > $shift->required_staff) {
 
             return response()->json([
-                'message' => 'Shift staffing limit exceeded'
+                'success' => false,
+                'message' => 'Shift staffing limit exceeded.'
             ], 422);
         }
 
         /*
         |--------------------------------------------------------------------------
-        | ASSIGN STAFF
+        | ASSIGN STAFF + CREATE ATTENDANCE
         |--------------------------------------------------------------------------
         */
         foreach ($request->employees as $employeeId) {
 
             $assignment = ShiftAssignment::firstOrCreate(
                 [
-                    'shift_id' => $id,
+                    'shift_id'    => $id,
                     'employee_id' => $employeeId,
                 ],
                 [
@@ -302,7 +311,7 @@ class ShiftController extends Controller
 
             /*
             |--------------------------------------------------------------------------
-            | REASSIGN IF PREVIOUSLY UNASSIGNED
+            | REACTIVATE IF PREVIOUSLY CHANGED
             |--------------------------------------------------------------------------
             */
             if ($assignment->status !== 'Assigned') {
@@ -311,6 +320,22 @@ class ShiftController extends Controller
                     'status' => 'Assigned'
                 ]);
             }
+
+            /*
+            |--------------------------------------------------------------------------
+            | CREATE ATTENDANCE RECORD
+            |--------------------------------------------------------------------------
+            */
+            Attendance::firstOrCreate(
+                [
+                    'shift_assignment_id' => $assignment->id,
+                ],
+                [
+                    'shift_id'    => $shift->id,
+                    'employee_id' => $employeeId,
+                    'status'      => 'Pending',
+                ]
+            );
         }
 
         /*
@@ -322,12 +347,20 @@ class ShiftController extends Controller
             ->where('status', 'Assigned')
             ->count();
 
-        if ($activeAssignments > 0) {
+        $shift->update([
+            'status' => $activeAssignments > 0 ? 'Assigned' : 'Open'
+        ]);
 
-            $shift->update([
-                'status' => 'Assigned'
-            ]);
-        }
+        /*
+        |--------------------------------------------------------------------------
+        | ACTIVITY LOG
+        |--------------------------------------------------------------------------
+        */
+        log_activity(
+            'shift_assignment',
+            'Shift Assignment',
+            "{$incoming} staff assigned to {$shift->title}"
+        );
 
         /*
         |--------------------------------------------------------------------------
@@ -335,7 +368,8 @@ class ShiftController extends Controller
         |--------------------------------------------------------------------------
         */
         return response()->json([
-            'message' => 'Staff assigned successfully',
+            'success' => true,
+            'message' => 'Staff assigned successfully.',
             'active_assignments' => $activeAssignments,
             'shift_status' => $shift->status
         ]);
@@ -343,31 +377,56 @@ class ShiftController extends Controller
 
     public function unassign($assignmentId)
     {
-        $assignment = ShiftAssignment::findOrFail($assignmentId);
+        DB::transaction(function () use ($assignmentId, &$activeAssignments) {
 
-        $shiftId = $assignment->shift_id;
+            $assignment = ShiftAssignment::findOrFail($assignmentId);
 
-        // remove assignment completely
-        $assignment->delete();
+            $shiftId = $assignment->shift_id;
 
-        /*
-        |--------------------------------------------------------------------------
-        | UPDATE SHIFT STATUS BASED ON REMAINING ASSIGNMENTS
-        |--------------------------------------------------------------------------
-        */
-        $activeAssignments = ShiftAssignment::where('shift_id', $shiftId)
-            ->where('status', 'Assigned')
-            ->count();
+            /*
+            |--------------------------------------------------------------------------
+            | DELETE ATTENDANCE RECORD
+            |--------------------------------------------------------------------------
+            */
+            Attendance::where('shift_assignment_id', $assignment->id)->delete();
 
-        $shift = Shift::findOrFail($shiftId);
+            /*
+            |--------------------------------------------------------------------------
+            | DELETE ASSIGNMENT
+            |--------------------------------------------------------------------------
+            */
+            $assignment->delete();
 
-        $shift->update([
-            'status' => $activeAssignments > 0 ? 'Assigned' : 'Open'
-        ]);
+            /*
+            |--------------------------------------------------------------------------
+            | UPDATE SHIFT STATUS
+            |--------------------------------------------------------------------------
+            */
+            $activeAssignments = ShiftAssignment::where('shift_id', $shiftId)
+                ->where('status', 'Assigned')
+                ->count();
+
+            $shift = Shift::findOrFail($shiftId);
+
+            $shift->update([
+                'status' => $activeAssignments > 0 ? 'Assigned' : 'Open'
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | ACTIVITY LOG
+            |--------------------------------------------------------------------------
+            */
+            log_activity(
+                'shift_unassigned',
+                'Shift Unassignment',
+                'A staff member was removed from shift "' . $shift->title . '"'
+            );
+        });
 
         return response()->json([
             'success' => true,
-            'message' => 'Staff unassigned successfully',
+            'message' => 'Staff unassigned successfully.',
             'remaining_assigned' => $activeAssignments
         ]);
     }

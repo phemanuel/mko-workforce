@@ -31,4 +31,10 @@ class ShiftAssignment extends Model
     {
         return $this->belongsTo(Employee::class);
     }
+
+    public function attendance()
+    {
+        return $this->hasOne(Attendance::class);
+    }
+    
 }

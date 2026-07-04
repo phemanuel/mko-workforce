@@ -156,5 +156,21 @@ use App\Http\Controllers\StaffShiftController;
         Route::post('/my-shifts/{id}/decline', [StaffShiftController::class, 'decline'])
             ->name('shifts.decline');
 
+        Route::resource('attendance', AttendanceController::class)
+        ->only(['index','show']);
+
+        Route::post(
+            'attendance/{assignment}/check-in',
+            [AttendanceController::class,'checkIn']
+        )->name('attendance.checkin');
+
+        Route::post(
+            'attendance/{assignment}/check-out',
+            [AttendanceController::class,'checkOut']
+        )->name('attendance.checkout');
+
+        Route::get('/attendance/{attendance}', [AttendanceController::class, 'show'])
+         ->name('attendance.show');
+
     });
     
