@@ -1,136 +1,284 @@
 @extends('layouts.admin')
 
+@section('title', 'Attendance Management')
+
 @section('content')
 
 <div class="space-y-6">
 
-    <!-- HEADER -->
-    <div class="flex items-center justify-between">
+    <!-- PAGE HEADER -->
+    <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-3xl overflow-hidden shadow-lg">
 
-        <div>
+        <div class="px-8 py-8 flex flex-col lg:flex-row lg:items-center lg:justify-between">
 
-            <h1 class="text-3xl font-bold text-gray-900">
-                Attendance Management
-            </h1>
+            <div>
 
-            <p class="text-gray-500 mt-1">
-                Monitor staff attendance, check-ins and shift activity.
-            </p>
+                <h1 class="text-3xl font-bold text-white">
+                    Attendance Management
+                </h1>
 
-        </div>
+                <p class="text-slate-300 mt-2">
+                    Monitor employee attendance, check-ins and shift progress in real time.
+                </p>
 
-    </div>
+            </div>
 
+            <div class="mt-6 lg:mt-0">
 
-    <!-- SUMMARY CARDS -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
+                <button
+                    onclick="loadAttendance()"
+                    class="bg-white text-slate-900 font-semibold px-6 py-3 rounded-xl shadow hover:bg-slate-100 transition">
 
-        <div class="bg-white rounded-3xl border p-5 shadow-sm">
+                    ↻ Refresh Attendance
 
-            <p class="text-sm text-gray-500">
-                Pending
-            </p>
+                </button>
 
-            <h2 class="text-3xl font-bold mt-2 text-yellow-600">
-                {{ $pendingCount }}
-            </h2>
-
-            <p class="text-xs text-gray-400 mt-2">
-                Awaiting Check-in
-            </p>
-
-        </div>
-
-        <div class="bg-white rounded-3xl border p-5 shadow-sm">
-
-            <p class="text-sm text-gray-500">
-                Checked In
-            </p>
-
-            <h2 class="text-3xl font-bold mt-2 text-blue-600">
-                {{ $checkedInCount }}
-            </h2>
-
-            <p class="text-xs text-gray-400 mt-2">
-                Currently Working
-            </p>
-
-        </div>
-
-        <div class="bg-white rounded-3xl border p-5 shadow-sm">
-
-            <p class="text-sm text-gray-500">
-                Completed
-            </p>
-
-            <h2 class="text-3xl font-bold mt-2 text-green-600">
-                {{ $completedCount }}
-            </h2>
-
-            <p class="text-xs text-gray-400 mt-2">
-                Finished Shift
-            </p>
-
-        </div>
-
-        <div class="bg-white rounded-3xl border p-5 shadow-sm">
-
-            <p class="text-sm text-gray-500">
-                Late
-            </p>
-
-            <h2 class="text-3xl font-bold mt-2 text-red-600">
-                {{ $lateCount }}
-            </h2>
-
-            <p class="text-xs text-gray-400 mt-2">
-                Need Attention
-            </p>
+            </div>
 
         </div>
 
     </div>
 
 
-    <!-- SEARCH + FILTER -->
-    <div class="bg-white rounded-3xl border shadow-sm overflow-hidden">
+    <!-- KPI CARDS -->
 
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-6 border-b bg-gray-50">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-5">
 
-            <div class="relative w-full lg:max-w-lg">
+        <div class="bg-white rounded-3xl shadow-sm border p-5">
 
-                <span class="absolute left-4 top-3.5 text-gray-400">
-                    🔍
+            <div class="flex items-center justify-between">
+
+                <div>
+
+                    <p class="text-sm text-gray-500">
+                        Pending
+                    </p>
+
+                    <h2 id="assignedCount"
+                        class="text-3xl font-bold mt-2">
+                        {{ $pendingCount ?? 0 }}
+                    </h2>
+
+                </div>
+
+                <div class="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center text-2xl">
+                    👥
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="bg-white rounded-3xl shadow-sm border p-5">
+
+            <div class="flex items-center justify-between">
+
+                <div>
+
+                    <p class="text-sm text-gray-500">
+                        Checked In
+                    </p>
+
+                    <h2 id="checkedInCount"
+                        class="text-3xl font-bold mt-2 text-green-600">
+
+                        {{ $checkedInCount ?? 0 }}
+
+                    </h2>
+
+                </div>
+
+                <div class="w-14 h-14 rounded-2xl bg-green-100 flex items-center justify-center text-2xl">
+                    ✅
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="bg-white rounded-3xl shadow-sm border p-5">
+
+            <div class="flex items-center justify-between">
+
+                <div>
+
+                    <p class="text-sm text-gray-500">
+                        Completed
+                    </p>
+
+                    <h2 id="completedCount"
+                        class="text-3xl font-bold mt-2 text-purple-600">
+
+                        {{ $completedCount ?? 0 }}
+
+                    </h2>
+
+                </div>
+
+                <div class="w-14 h-14 rounded-2xl bg-purple-100 flex items-center justify-center text-2xl">
+                    🏁
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="bg-white rounded-3xl shadow-sm border p-5">
+
+            <div class="flex items-center justify-between">
+
+                <div>
+
+                    <p class="text-sm text-gray-500">
+                        Late
+                    </p>
+
+                    <h2 id="lateCount"
+                        class="text-3xl font-bold mt-2 text-red-600">
+
+                        {{ $lateCount ?? 0 }}
+
+                    </h2>
+
+                </div>
+
+                <div class="w-14 h-14 rounded-2xl bg-red-100 flex items-center justify-center text-2xl">
+                    ⏰
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="bg-white rounded-3xl shadow-sm border p-5">
+
+            <div class="flex items-center justify-between">
+
+                <div>
+
+                    <p class="text-sm text-gray-500">
+                        Absent
+                    </p>
+
+                    <h2 id="absentCount"
+                        class="text-3xl font-bold mt-2 text-orange-600">
+
+                        {{ $absentCount ?? 0 }}
+
+                    </h2>
+
+                </div>
+
+                <div class="w-14 h-14 rounded-2xl bg-orange-100 flex items-center justify-center text-2xl">
+                    ❌
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- SEARCH / FILTERS -->
+
+    <div class="bg-white rounded-3xl shadow-sm border overflow-hidden">
+
+        <div class="px-6 py-5 border-b bg-gray-50 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+
+            <div class="flex-1 max-w-xl">
+
+                <div class="relative">
+
+                    <span class="absolute left-4 top-3.5 text-gray-400">
+                        🔍
+                    </span>
+
+                    <input
+                        id="attendanceSearch"
+                        type="text"
+                        placeholder="Search employee, shift or location..."
+
+                        class="w-full border rounded-2xl py-3 pl-11 pr-4
+                        focus:ring-2 focus:ring-black/10">
+
+                </div>
+
+            </div>
+
+            <div>
+
+                <span
+                    id="attendanceTotal"
+                    class="bg-black text-white px-5 py-2 rounded-xl text-sm">
+
+                    {{ $attendances->count() }} Records
+
                 </span>
 
-                <input
-                    id="attendanceSearch"
-                    type="text"
-                    placeholder="Search employee, shift, supervisor..."
-                    class="w-full pl-11 pr-4 py-3 rounded-2xl border focus:ring-2 focus:ring-black/10">
-
             </div>
 
-            <div class="flex gap-2 flex-wrap">
+        </div>
 
-                <button class="attendance-tab px-4 py-2 rounded-xl bg-black text-white">
+
+
+        <!-- STATUS TABS -->
+
+        <div class="px-6 pt-5">
+
+            <div class="flex flex-wrap gap-3">
+
+                <button
+                    class="attendance-tab active px-5 py-2 rounded-full bg-black text-white"
+                    data-status="">
+
                     All
+
                 </button>
 
-                <button class="attendance-tab px-4 py-2 rounded-xl border">
+                <button
+                    class="attendance-tab px-5 py-2 rounded-full bg-gray-100"
+                    data-status="Pending">
+
                     Pending
+
                 </button>
 
-                <button class="attendance-tab px-4 py-2 rounded-xl border">
+                <button
+                    class="attendance-tab px-5 py-2 rounded-full bg-gray-100"
+                    data-status="Checked In">
+
                     Checked In
+
                 </button>
 
-                <button class="attendance-tab px-4 py-2 rounded-xl border">
+                <button
+                    class="attendance-tab px-5 py-2 rounded-full bg-gray-100"
+                    data-status="Completed">
+
                     Completed
+
                 </button>
 
-                <button class="attendance-tab px-4 py-2 rounded-xl border">
+                <button
+                    class="attendance-tab px-5 py-2 rounded-full bg-gray-100"
+                    data-status="Late">
+
                     Late
+
+                </button>
+
+                <button
+                    class="attendance-tab px-5 py-2 rounded-full bg-gray-100"
+                    data-status="Absent">
+
+                    Absent
+
                 </button>
 
             </div>
@@ -138,80 +286,58 @@
         </div>
 
 
-        <!-- TABLE -->
-        <div class="overflow-x-auto">
 
-            <table class="w-full">
+        <!-- GRID -->
 
-                <thead class="bg-gray-50">
+        <div
+            id="attendanceGrid"
+            class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 p-6">
 
-                    <tr class="text-left text-sm text-gray-500">
+            @forelse($attendances as $attendance)
 
-                        <th class="px-6 py-4">Employee</th>
-                        <th>Shift</th>
-                        <th>Supervisor</th>
-                        <th>Status</th>
-                        <th>Check In</th>
-                        <th>Check Out</th>
-                        <th></th>
+                @php
 
-                    </tr>
+                    $badge = match($attendance->status){
 
-                </thead>
+                        'Pending'=>'bg-blue-100 text-blue-700',
 
-                <tbody id="attendanceTable">
+                        'Checked In'=>'bg-green-100 text-green-700',
 
-                @forelse($attendances as $attendance)
+                        'Completed'=>'bg-purple-100 text-purple-700',
 
-                    @php
+                        'Late'=>'bg-red-100 text-red-700',
 
-                        $badge = match($attendance->status){
+                        default=>'bg-gray-100 text-gray-700'
 
-                            'Pending' => 'bg-yellow-100 text-yellow-700',
+                    };
 
-                            'Checked In' => 'bg-blue-100 text-blue-700',
+                @endphp
 
-                            'Completed' => 'bg-green-100 text-green-700',
+                <div
 
-                            'Late' => 'bg-red-100 text-red-700',
+                    class="attendance-card rounded-3xl border bg-white shadow-sm hover:shadow-xl transition"
 
-                            default => 'bg-gray-100 text-gray-700'
+                    data-status="{{ $attendance->status }}">
 
-                        };
+                    <div class="p-5">
 
-                    @endphp
+                        <div class="flex justify-between">
 
-                    <tr class="border-t hover:bg-gray-50">
+                            <div>
 
-                        <td class="px-6 py-5">
+                                <h3 class="font-bold text-lg">
 
-                            <div class="font-semibold">
+                                    {{ $attendance->employee->user->name }}
 
-                                {{ $attendance->employee->user->name }}
+                                </h3>
 
-                            </div>
+                                <p class="text-sm text-gray-500">
 
-                            <div class="text-xs text-gray-500">
+                                    {{ $attendance->shift->title }}
 
-                                {{ $attendance->employee->primary_role }}
+                                </p>
 
                             </div>
-
-                        </td>
-
-                        <td>
-
-                            {{ $attendance->shift->title }}
-
-                        </td>
-
-                        <td>
-
-                            {{ optional($attendance->shift->supervisor)->name ?? 'Admin' }}
-
-                        </td>
-
-                        <td>
 
                             <span class="px-3 py-1 rounded-full text-xs font-semibold {{ $badge }}">
 
@@ -219,69 +345,122 @@
 
                             </span>
 
-                        </td>
+                        </div>
 
-                        <td>
 
-                            {{ $attendance->check_in_time ?? '--' }}
+                        <div class="mt-5 space-y-3">
 
-                        </td>
+                            <div class="flex justify-between">
 
-                        <td>
+                                <span class="text-gray-500">
 
-                            {{ $attendance->check_out_time ?? '--' }}
+                                    📅 Date
 
-                        </td>
+                                </span>
 
-                        <td class="pr-6">
+                                <strong>
 
-                            <button
-                                onclick="openAttendanceInspector({{ $attendance->id }})"
-                                class="text-blue-600 hover:text-blue-800 font-medium">
+                                    {{ $attendance->shift->shift_date }}
 
-                                View
-
-                            </button>
-
-                        </td>
-
-                    </tr>
-
-                @empty
-
-                    <tr>
-
-                        <td colspan="7">
-
-                            <div class="py-20 text-center">
-
-                                <div class="text-5xl">
-                                    📋
-                                </div>
-
-                                <h3 class="text-xl font-semibold mt-5">
-
-                                    No attendance records
-
-                                </h3>
-
-                                <p class="text-gray-500 mt-2">
-
-                                    Attendance records will appear once staff are assigned to shifts.
-
-                                </p>
+                                </strong>
 
                             </div>
 
-                        </td>
 
-                    </tr>
+                            <div class="flex justify-between">
 
-                @endforelse
+                                <span class="text-gray-500">
 
-                </tbody>
+                                    ⏰ Shift
 
-            </table>
+                                </span>
+
+                                <strong>
+
+                                    {{ $attendance->shift->start_time }}
+
+                                    -
+
+                                    {{ $attendance->shift->end_time }}
+
+                                </strong>
+
+                            </div>
+
+
+                            <div class="flex justify-between">
+
+                                <span class="text-gray-500">
+
+                                    ✔ Check In
+
+                                </span>
+
+                                <strong>
+
+                                    {{ $attendance->check_in_time ?? '--' }}
+
+                                </strong>
+
+                            </div>
+
+
+                            <div class="flex justify-between">
+
+                                <span class="text-gray-500">
+
+                                    ✖ Check Out
+
+                                </span>
+
+                                <strong>
+
+                                    {{ $attendance->check_out_time ?? '--' }}
+
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        <button
+
+                            onclick="openAttendanceInspector({{ $attendance->id }})"
+
+                            class="w-full mt-6 border rounded-xl py-3 font-semibold text-slate-700 hover:bg-slate-100">
+
+                            View Details →
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            @empty
+
+                <div class="col-span-full py-20 text-center">
+
+                    <div class="text-6xl">
+                        📋
+                    </div>
+
+                    <h3 class="text-xl font-bold mt-4">
+
+                        No Attendance Records
+
+                    </h3>
+
+                    <p class="text-gray-500 mt-2">
+
+                        Attendance will appear once staff are assigned to shifts.
+
+                    </p>
+
+                </div>
+
+            @endforelse
 
         </div>
 
@@ -293,75 +472,329 @@
 @include('admin.attendance.inspector')
 
 <script>
-    async function openAttendanceInspector(id)
+/*
+|--------------------------------------------------------------------------
+| OPEN INSPECTOR
+|--------------------------------------------------------------------------
+*/
+async function openAttendanceInspector(id)
 {
-    try{
+    try {
 
-        const response = await fetch(`/admin/attendance/${id}`);
+        const response = await fetch(`/admin/attendance/${id}`, {
+            headers: {
+                Accept: 'application/json'
+            }
+        });
 
         const data = await response.json();
 
-        const a = data.attendance;
+        if (!response.ok) {
+            throw new Error(data.message || 'Unable to load attendance.');
+        }
 
-        document.getElementById('ai_employee_name').innerText =
-            a.employee.user.name;
+        populateAttendanceInspector(data);
 
-        document.getElementById('ai_role').innerText =
-            a.employee.primary_role;
-
-        document.getElementById('ai_status').innerText =
-            a.status;
-
-        document.getElementById('ai_shift').innerText =
-            a.shift.title;
-
-        document.getElementById('ai_date').innerText =
-            a.shift.shift_date;
-
-        document.getElementById('ai_time').innerText =
-            `${a.shift.start_time} - ${a.shift.end_time}`;
-
-        document.getElementById('ai_supervisor').innerText =
-            a.shift.supervisor?.name ?? 'Admin';
-
-        document.getElementById('ai_checkin').innerText =
-            a.check_in_time ?? '--';
-
-        document.getElementById('ai_checkout').innerText =
-            a.check_out_time ?? '--';
-
-        document.getElementById('ai_hours').innerText =
-            data.hours_worked;
-
-        document.getElementById('ai_checkin_location').innerText =
-            a.check_in_lat
-                ? `${a.check_in_lat}, ${a.check_in_lng}`
-                : '--';
-
-        document.getElementById('ai_checkout_location').innerText =
-            a.check_out_lat
-                ? `${a.check_out_lat}, ${a.check_out_lng}`
-                : '--';
-
-        document.getElementById('ai_notes').value =
-            a.notes ?? '';
-
-        document.getElementById('attendanceInspector')
+        document
+            .getElementById('attendanceInspector')
             .classList.remove('translate-x-full');
 
-    }catch(e){
+        document
+            .getElementById('attendanceInspectorBackdrop')
+            .classList.remove('hidden');
 
-        console.error(e);
+    } catch (err) {
 
-        alert('Unable to load attendance.');
+        console.error(err);
+        showToast(err.message, 'error');
 
     }
 }
 
+
+
+/*
+|--------------------------------------------------------------------------
+| CLOSE INSPECTOR
+|--------------------------------------------------------------------------
+*/
 function closeAttendanceInspector()
 {
-    document.getElementById('attendanceInspector')
+    document
+        .getElementById('attendanceInspector')
         .classList.add('translate-x-full');
+
+    document
+        .getElementById('attendanceInspectorBackdrop')
+        .classList.add('hidden');
 }
+
+
+
+/*
+|--------------------------------------------------------------------------
+| POPULATE INSPECTOR
+|--------------------------------------------------------------------------
+*/
+function populateAttendanceInspector(att)
+{
+
+    document.getElementById('inspectorEmployee').textContent =
+        att.employee?.user?.name ?? 'Unknown Employee';
+
+    document.getElementById('inspectorRole').textContent =
+        att.employee?.primary_role ?? '-';
+
+    document.getElementById('inspectorShift').textContent =
+        att.shift?.title ?? '-';
+
+    document.getElementById('inspectorDate').textContent =
+        att.shift?.shift_date ?? '-';
+
+    document.getElementById('inspectorTime').textContent =
+        `${att.shift?.start_time ?? '--'} - ${att.shift?.end_time ?? '--'}`;
+
+    document.getElementById('inspectorCheckIn').textContent =
+        att.check_in_time ?? 'Not Checked In';
+
+    document.getElementById('inspectorCheckOut').textContent =
+        att.check_out_time ?? 'Not Checked Out';
+
+    document.getElementById('inspectorHours').textContent =
+        att.worked_hours ?? '--';
+
+    document.getElementById('checkInLocation').textContent =
+        (att.check_in_lat && att.check_in_lng)
+            ? `${att.check_in_lat}, ${att.check_in_lng}`
+            : '--';
+
+    document.getElementById('checkOutLocation').textContent =
+        (att.check_out_lat && att.check_out_lng)
+            ? `${att.check_out_lat}, ${att.check_out_lng}`
+            : '--';
+
+    document.getElementById('supervisorName').textContent =
+    `${att.shift.supervisor_name} (${att.shift.supervisor_role})`;
+
+    document.getElementById('shiftNotes').textContent =
+        att.shift?.notes ?? 'No notes available.';
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | STATUS BADGE
+    |--------------------------------------------------------------------------
+    */
+
+    const badge = document.getElementById('inspectorStatus');
+
+    badge.textContent = att.status;
+
+    badge.className =
+        'inline-block px-3 py-1 rounded-full text-white text-sm';
+
+    switch(att.status){
+
+        case 'Pending':
+            badge.classList.add('bg-gray-500');
+            break;
+
+        case 'Checked In':
+            badge.classList.add('bg-blue-600');
+            break;
+
+        case 'Completed':
+            badge.classList.add('bg-green-600');
+            break;
+
+        case 'Late':
+            badge.classList.add('bg-red-600');
+            break;
+
+        case 'Absent':
+            badge.classList.add('bg-red-700');
+            break;
+
+        default:
+            badge.classList.add('bg-slate-600');
+
+    }
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | ATTENDANCE FLAG
+    |--------------------------------------------------------------------------
+    */
+
+    const flag = document.getElementById('attendanceFlag');
+
+    if(att.late){
+
+        flag.innerHTML =
+            '<span class="text-red-600 font-semibold">Late Arrival</span>';
+
+    }
+    else if(att.early_leave){
+
+        flag.innerHTML =
+            '<span class="text-yellow-600 font-semibold">Early Leave</span>';
+
+    }
+    else{
+
+        flag.innerHTML =
+            '<span class="text-green-600 font-semibold">Normal</span>';
+
+    }
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | TIMELINE
+    |--------------------------------------------------------------------------
+    */
+
+    let timeline = '';
+
+    timeline += `
+        <div class="flex gap-4">
+            <div class="w-3 h-3 mt-2 rounded-full bg-gray-400"></div>
+            <div>
+                <div class="font-semibold">
+                    Attendance Record Created
+                </div>
+                <div class="text-sm text-gray-500">
+                    ${att.created_at}
+                </div>
+            </div>
+        </div>
+    `;
+
+    if(att.check_in_time){
+
+        timeline += `
+        <div class="flex gap-4">
+            <div class="w-3 h-3 mt-2 rounded-full bg-blue-500"></div>
+            <div>
+                <div class="font-semibold">
+                    Checked In
+                </div>
+                <div class="text-sm text-gray-500">
+                    ${att.check_in_time}
+                </div>
+            </div>
+        </div>
+        `;
+
+    }
+
+    if(att.check_out_time){
+
+        timeline += `
+        <div class="flex gap-4">
+            <div class="w-3 h-3 mt-2 rounded-full bg-green-500"></div>
+            <div>
+                <div class="font-semibold">
+                    Checked Out
+                </div>
+                <div class="text-sm text-gray-500">
+                    ${att.check_out_time}
+                </div>
+            </div>
+        </div>
+        `;
+
+    }
+
+    document.getElementById('attendanceTimeline').innerHTML = timeline;
+
+}
+
+
+
+/*
+|--------------------------------------------------------------------------
+| SEARCH
+|--------------------------------------------------------------------------
+*/
+
+document
+.getElementById('attendanceSearch')
+.addEventListener('keyup', function(){
+
+    const value = this.value.toLowerCase();
+
+    document
+    .querySelectorAll('.attendance-card')
+    .forEach(card=>{
+
+        card.style.display =
+            card.innerText.toLowerCase().includes(value)
+            ? ''
+            : 'none';
+
+    });
+
+});
+
+
+
+/*
+|--------------------------------------------------------------------------
+| FILTERS
+|--------------------------------------------------------------------------
+*/
+
+document
+.querySelectorAll('.attendance-filter')
+.forEach(button=>{
+
+    button.addEventListener('click',function(){
+
+        document
+        .querySelectorAll('.attendance-filter')
+        .forEach(b=>{
+
+            b.classList.remove(
+                'bg-slate-900',
+                'text-white'
+            );
+
+        });
+
+        this.classList.add(
+            'bg-slate-900',
+            'text-white'
+        );
+
+        const status = this.dataset.status;
+
+        document
+        .querySelectorAll('.attendance-card')
+        .forEach(card=>{
+
+            if(status==='All'){
+
+                card.style.display='';
+
+            }
+            else{
+
+                card.style.display =
+                    card.dataset.status===status
+                    ? ''
+                    : 'none';
+
+            }
+
+        });
+
+    });
+
+});
 </script>
 @endsection

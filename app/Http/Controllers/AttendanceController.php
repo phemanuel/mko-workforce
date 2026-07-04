@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Attendance;
 use App\Models\Shift;
+use App\Models\User;
+use Carbon\Carbon;
 
 class AttendanceController extends Controller
 {
@@ -121,17 +123,52 @@ class AttendanceController extends Controller
     {
         $attendance->load([
             'employee.user',
-            'shift.supervisor'
+            'shift.supervisor',
         ]);
 
-        return response()->json([
-            'attendance' => $attendance,
-            'hours_worked' => $attendance->check_in_time && $attendance->check_out_time
-                ? \Carbon\Carbon::parse($attendance->check_in_time)
-                    ->diff(\Carbon\Carbon::parse($attendance->check_out_time))
+        /*
+        |--------------------------------------------------------------------------
+        | Worked Hours
+        |--------------------------------------------------------------------------
+        */
+        $attendance->worked_hours =
+            ($attendance->check_in_time && $attendance->check_out_time)
+                ? Carbon::parse($attendance->check_in_time)
+                    ->diff(Carbon::parse($attendance->check_out_time))
                     ->format('%hh %Im')
-                : '--'
-        ]);
+                : '--';
+
+        /*
+        |--------------------------------------------------------------------------
+        | Flags
+        |--------------------------------------------------------------------------
+        */
+        $attendance->late = $attendance->status === 'Late';
+        $attendance->early_leave = $attendance->status === 'Early Leave';
+
+        /*
+        |--------------------------------------------------------------------------
+        | Supervisor Details
+        |--------------------------------------------------------------------------
+        */
+        if ($attendance->shift->supervisor) {
+
+            $attendance->shift->supervisor_name =
+                $attendance->shift->supervisor->name;
+
+            $attendance->shift->supervisor_role = 'Supervisor';
+
+        } else {
+
+            $admin = User::where('role_id', 1)->first();
+
+            $attendance->shift->supervisor_name =
+                $admin?->name ?? 'Administrator';
+
+            $attendance->shift->supervisor_role = 'Administrator';
+        }
+
+        return response()->json($attendance);
     }
     
 }

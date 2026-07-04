@@ -6,19 +6,19 @@
 
     <a href="/staff/dashboard"
        class="block px-4 py-2 rounded hover:bg-gray-800
-       {{ request()->routeIs('staff.dashboard') ? 'bg-gray-800 text-white' : '' }}">
+       {{ request()->routeIs('staff.staff.dashboard') ? 'bg-gray-800 text-white' : '' }}">
         📊 Dashboard
     </a>    
 
     <a href="/staff/my-shifts"
        class="block px-4 py-2 rounded hover:bg-gray-800
-       {{ request()->routeIs('shifts.index*') ? 'bg-gray-800 text-white' : '' }}">
+       {{ request()->routeIs('staff.shifts.index*') ? 'bg-gray-800 text-white' : '' }}">
         🧾 My Shifts
     </a>
 
     <a href="/staff/shifts"
        class="block px-4 py-2 rounded hover:bg-gray-800
-       {{ request()->routeIs('staff.shifts*') ? 'bg-gray-800 text-white' : '' }}">
+       {{ request()->routeIs('staff.shifts.show*') ? 'bg-gray-800 text-white' : '' }}">
         📅 Available Shifts
     </a>
 

@@ -139,25 +139,8 @@ use App\Http\Controllers\StaffShiftController;
         //--------Attendance Routes
          Route::get('/attendance', [AttendanceController::class, 'index'])
         ->name('attendance.index');
-
-    });
-
-    Route::prefix('staff')
-    ->middleware(['auth'])
-    ->name('staff.')
-    ->group(function () {
-
-        Route::get('/my-shifts', [StaffShiftController::class, 'index'])
-            ->name('shifts.index');
-
-        Route::post('/my-shifts/{id}/accept', [StaffShiftController::class, 'accept'])
-            ->name('shifts.accept');
-
-        Route::post('/my-shifts/{id}/decline', [StaffShiftController::class, 'decline'])
-            ->name('shifts.decline');
-
-        Route::resource('attendance', AttendanceController::class)
-        ->only(['index','show']);
+        // Route::resource('attendance', AttendanceController::class)
+        // ->only(['index','show']);
 
         Route::post(
             'attendance/{assignment}/check-in',
@@ -171,6 +154,29 @@ use App\Http\Controllers\StaffShiftController;
 
         Route::get('/attendance/{attendance}', [AttendanceController::class, 'show'])
          ->name('attendance.show');
+
+    });
+
+    Route::prefix('staff')
+    ->middleware(['auth'])
+    ->name('staff.')
+    ->group(function () {
+
+        Route::get('/dashboard', [DashboardController::class, 'index'])
+            ->name('staff.dashboard');  
+
+        Route::get('/my-shifts', [StaffShiftController::class, 'index'])
+            ->name('shifts.index');
+
+        Route::get('/shifts', [StaffShiftController::class, 'index'])
+            ->name('shifts.show');
+
+        Route::post('/my-shifts/{id}/accept', [StaffShiftController::class, 'accept'])
+            ->name('shifts.accept');
+
+        Route::post('/my-shifts/{id}/decline', [StaffShiftController::class, 'decline'])
+            ->name('shifts.decline');
+        
 
     });
     

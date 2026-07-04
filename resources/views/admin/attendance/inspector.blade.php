@@ -1,27 +1,28 @@
 <!-- ATTENDANCE INSPECTOR -->
 <div id="attendanceInspector"
-     class="fixed inset-y-0 right-0 z-[9999] w-full max-w-xl bg-white shadow-2xl
-            translate-x-full transition-transform duration-300 ease-in-out">
+     class="fixed inset-y-0 right-0 z-[9999] w-full md:w-[620px] bg-white shadow-2xl
+            translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
 
-    <div class="flex flex-col h-full">
+    <!-- HEADER -->
+    <div class="bg-gradient-to-r from-slate-900 to-slate-800 text-white px-6 py-5">
 
-        <!-- HEADER -->
-        <div class="flex items-center justify-between px-6 py-5 border-b">
+        <div class="flex items-center justify-between">
 
             <div>
 
-                <h2 class="text-xl font-bold text-gray-900">
+                <h2 class="text-xl font-bold">
                     Attendance Details
                 </h2>
 
-                <p class="text-sm text-gray-500">
-                    View and manage attendance
+                <p class="text-sm text-slate-300 mt-1">
+                    Employee attendance information
                 </p>
 
             </div>
 
-            <button onclick="closeAttendanceInspector()"
-                    class="w-10 h-10 rounded-xl hover:bg-gray-100 text-xl">
+            <button
+                onclick="closeAttendanceInspector()"
+                class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20">
 
                 ✕
 
@@ -29,14 +30,17 @@
 
         </div>
 
-        <!-- CONTENT -->
-        <div id="attendanceInspectorBody"
-             class="flex-1 overflow-y-auto p-6 space-y-6">
+    </div>
 
-            <!-- Employee -->
+    <!-- BODY -->
+    <div class="flex-1 overflow-y-auto p-6 space-y-6">
+
+        <!-- EMPLOYEE -->
+        <div class="bg-slate-50 rounded-2xl p-5">
+
             <div class="flex items-center gap-4">
 
-                <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-2xl">
+                <div class="w-16 h-16 rounded-full bg-slate-200 flex items-center justify-center text-2xl">
 
                     👤
 
@@ -44,251 +48,309 @@
 
                 <div>
 
-                    <h3 id="ai_employee_name"
-                        class="text-xl font-bold text-gray-900">
+                    <h3
+                        id="inspectorEmployee"
+                        class="text-xl font-bold">
+
+                        --
+
                     </h3>
 
-                    <p id="ai_role"
-                       class="text-gray-500">
+                    <p
+                        id="inspectorRole"
+                        class="text-gray-500">
+
+                        --
+
                     </p>
 
                 </div>
 
             </div>
 
+        </div>
 
-            <!-- STATUS -->
-            <div class="rounded-2xl border p-5">
 
-                <div class="flex items-center justify-between">
+        <!-- SHIFT INFORMATION -->
 
-                    <span class="text-gray-500">
+        <div class="bg-white border rounded-2xl p-5">
 
-                        Attendance Status
+            <h3 class="font-bold text-lg mb-4">
+
+                Shift Information
+
+            </h3>
+
+            <div class="grid grid-cols-2 gap-4">
+
+                <div>
+
+                    <p class="text-gray-500 text-sm">
+
+                        Shift
+
+                    </p>
+
+                    <p
+                        id="inspectorShift">
+
+                        --
+
+                    </p>
+
+                </div>
+
+                <div>
+
+                    <p class="text-gray-500 text-sm">
+
+                        Date
+
+                    </p>
+
+                    <p
+                        id="inspectorDate">
+
+                        --
+
+                    </p>
+
+                </div>
+
+                <div>
+
+                    <p class="text-gray-500 text-sm">
+
+                        Time
+
+                    </p>
+
+                    <p
+                        id="inspectorTime">
+
+                        --
+
+                    </p>
+
+                </div>
+
+                <div>
+
+                    <p class="text-gray-500 text-sm">
+
+                        Status
+
+                    </p>
+
+                    <span
+                        id="inspectorStatus"
+                        class="inline-block px-3 py-1 rounded-full bg-gray-100">
+
+                        --
 
                     </span>
 
-                    <span id="ai_status"
-                          class="px-3 py-1 rounded-full text-sm font-semibold">
-
-                    </span>
-
                 </div>
-
-            </div>
-
-
-            <!-- SHIFT DETAILS -->
-            <div class="rounded-2xl border p-5">
-
-                <h4 class="font-semibold mb-4">
-
-                    Shift Information
-
-                </h4>
-
-                <div class="grid grid-cols-2 gap-5 text-sm">
-
-                    <div>
-
-                        <p class="text-gray-500">Shift</p>
-
-                        <p id="ai_shift"></p>
-
-                    </div>
-
-                    <div>
-
-                        <p class="text-gray-500">Date</p>
-
-                        <p id="ai_date"></p>
-
-                    </div>
-
-                    <div>
-
-                        <p class="text-gray-500">Time</p>
-
-                        <p id="ai_time"></p>
-
-                    </div>
-
-                    <div>
-
-                        <p class="text-gray-500">Supervisor</p>
-
-                        <p id="ai_supervisor"></p>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <!-- CHECK-IN -->
-            <div class="rounded-2xl border p-5">
-
-                <h4 class="font-semibold mb-4">
-
-                    Attendance
-
-                </h4>
-
-                <div class="space-y-4">
-
-                    <div class="flex justify-between">
-
-                        <span class="text-gray-500">
-
-                            Check In
-
-                        </span>
-
-                        <strong id="ai_checkin">
-
-                            --
-
-                        </strong>
-
-                    </div>
-
-                    <div class="flex justify-between">
-
-                        <span class="text-gray-500">
-
-                            Check Out
-
-                        </span>
-
-                        <strong id="ai_checkout">
-
-                            --
-
-                        </strong>
-
-                    </div>
-
-                    <div class="flex justify-between">
-
-                        <span class="text-gray-500">
-
-                            Hours Worked
-
-                        </span>
-
-                        <strong id="ai_hours">
-
-                            --
-
-                        </strong>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <!-- GPS -->
-            <div class="rounded-2xl border p-5">
-
-                <h4 class="font-semibold mb-4">
-
-                    GPS Information
-
-                </h4>
-
-                <div class="space-y-3">
-
-                    <div class="flex justify-between">
-
-                        <span class="text-gray-500">
-
-                            Check-In
-
-                        </span>
-
-                        <span id="ai_checkin_location">
-
-                            --
-
-                        </span>
-
-                    </div>
-
-                    <div class="flex justify-between">
-
-                        <span class="text-gray-500">
-
-                            Check-Out
-
-                        </span>
-
-                        <span id="ai_checkout_location">
-
-                            --
-
-                        </span>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <!-- NOTES -->
-            <div class="rounded-2xl border p-5">
-
-                <h4 class="font-semibold mb-4">
-
-                    Admin Notes
-
-                </h4>
-
-                <textarea id="ai_notes"
-                          rows="4"
-                          class="w-full border rounded-xl p-3"
-                          placeholder="Write notes..."></textarea>
 
             </div>
 
         </div>
 
 
-        <!-- FOOTER -->
-        <div class="border-t p-5 bg-gray-50">
+        <!-- ATTENDANCE -->
 
-            <div class="grid grid-cols-2 gap-3">
+        <div class="bg-white border rounded-2xl p-5">
 
-                <button
-                    class="bg-green-600 hover:bg-green-700 text-white rounded-xl py-3">
+            <h3 class="font-bold text-lg mb-4">
 
-                    ✓ Mark Present
+                Attendance
 
-                </button>
+            </h3>
 
-                <button
-                    class="bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl py-3">
+            <div class="space-y-4">
 
-                    ⏰ Mark Late
+                <div class="flex justify-between">
 
-                </button>
+                    <span>
 
-                <button
-                    class="bg-red-600 hover:bg-red-700 text-white rounded-xl py-3">
+                        Check In
 
-                    ✕ No Show
+                    </span>
 
-                </button>
+                    <strong
+                        id="inspectorCheckIn">
 
-                <button
-                    class="bg-gray-800 hover:bg-black text-white rounded-xl py-3">
+                        --
 
-                    Reset
+                    </strong>
 
-                </button>
+                </div>
+
+                <div class="flex justify-between">
+
+                    <span>
+
+                        Check Out
+
+                    </span>
+
+                    <strong
+                        id="inspectorCheckOut">
+
+                        --
+
+                    </strong>
+
+                </div>
+
+                <div class="flex justify-between">
+
+                    <span>
+
+                        Worked Hours
+
+                    </span>
+
+                    <strong
+                        id="inspectorHours">
+
+                        --
+
+                    </strong>
+
+                </div>
+
+                <div class="flex justify-between">
+
+                    <span>
+
+                        Attendance Status
+
+                    </span>
+
+                    <strong
+                        id="attendanceFlag">
+
+                        --
+
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- GPS -->
+
+        <div class="bg-white border rounded-2xl p-5">
+
+            <h3 class="font-bold text-lg mb-4">
+
+                GPS Information
+
+            </h3>
+
+            <div class="space-y-3">
+
+                <div>
+
+                    <p class="text-sm text-gray-500">
+
+                        Check In Location
+
+                    </p>
+
+                    <p
+                        id="checkInLocation">
+
+                        --
+
+                    </p>
+
+                </div>
+
+                <div>
+
+                    <p class="text-sm text-gray-500">
+
+                        Check Out Location
+
+                    </p>
+
+                    <p
+                        id="checkOutLocation">
+
+                        --
+
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- SUPERVISOR -->
+
+        <div class="bg-white border rounded-2xl p-5">
+
+            <h3 class="font-bold text-lg mb-4">
+
+                Supervisor
+
+            </h3>
+
+            <div
+                id="supervisorName">
+
+                --
+
+            </div>
+
+        </div>
+
+
+
+        <!-- NOTES -->
+
+        <div class="bg-white border rounded-2xl p-5">
+
+            <h3 class="font-bold text-lg mb-4">
+
+                Shift Notes
+
+            </h3>
+
+            <div
+                id="shiftNotes"
+                class="text-gray-600">
+
+                No notes available.
+
+            </div>
+
+        </div>
+
+
+
+        <!-- TIMELINE -->
+
+        <div class="bg-white border rounded-2xl p-5">
+
+            <h3 class="font-bold text-lg mb-5">
+
+                Timeline
+
+            </h3>
+
+            <div
+                id="attendanceTimeline"
+                class="space-y-4">
 
             </div>
 
@@ -296,4 +358,29 @@
 
     </div>
 
+
+    <!-- FOOTER -->
+
+    <div class="border-t p-5 bg-white">
+
+        <button
+            onclick="closeAttendanceInspector()"
+            class="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-xl py-3">
+
+            Close Inspector
+
+        </button>
+
+    </div>
+
+</div>
+
+
+
+<!-- BACKDROP -->
+
+<div
+    id="attendanceInspectorBackdrop"
+    onclick="closeAttendanceInspector()"
+    class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-[9998]">
 </div>
