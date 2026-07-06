@@ -23,21 +23,7 @@
                 <p class="text-gray-300 text-sm md:text-base">
                     Manage your assigned shifts, attendance records, and payment history.
                 </p>
-            </div>
-
-            <!-- <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 min-w-[220px]">
-                <p class="text-sm text-gray-300 mb-1">
-                    Today's Date
-                </p>
-
-                <h3 class="text-xl font-semibold">
-                    {{ now()->format('d M Y') }}
-                </h3>
-
-                <p class="text-sm text-green-400 mt-2">
-                    ● Active Staff Account
-                </p>
-            </div> -->
+            </div>           
 
         </div>
 

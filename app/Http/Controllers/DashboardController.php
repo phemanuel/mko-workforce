@@ -75,7 +75,9 @@ class DashboardController extends Controller
       */
       elseif ($userRole == 3) {
 
-         return view('dashboard.staff');
+      return redirect()->route('staff.dashboard');
+
+         // return view('dashboard.staff');
       }
 
       /*

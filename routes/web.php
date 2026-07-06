@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\StaffDashboardController;
 use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\AdminApplicationController;
@@ -162,8 +163,8 @@ use App\Http\Controllers\StaffShiftController;
     ->name('staff.')
     ->group(function () {
 
-        Route::get('/dashboard', [DashboardController::class, 'index'])
-            ->name('staff.dashboard');  
+        Route::get('/dashboard', [StaffDashboardController::class, 'index'])
+            ->name('dashboard');  
 
         Route::get('/my-shifts', [StaffShiftController::class, 'index'])
             ->name('shifts.index');
