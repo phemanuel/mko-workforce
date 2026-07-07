@@ -261,35 +261,51 @@
 
                 @if($todayAttendance)
 
-                    @if(in_array($todayAttendance->status,['Pending','Late']))
+                    @php
 
-                        <button
-                            id="checkInBtn"
-                            class="px-5 py-3 bg-green-600 hover:bg-green-700 rounded-xl text-white">
+                        $buttonText = '';
+                        $buttonClass = '';
 
-                            Check In
+                        switch ($attendanceAction) {
 
-                        </button>
+                            case 'checkin':
+                                $buttonText = 'Check In';
+                                $buttonClass = $todayAttendance->status == 'Late'
+                                    ? 'bg-yellow-600 hover:bg-yellow-700'
+                                    : 'bg-green-600 hover:bg-green-700';
+                                break;
 
-                    @elseif($todayAttendance->status=='Checked In')
+                            case 'checkout':
+                                $buttonText = 'Check Out';
+                                $buttonClass = 'bg-red-600 hover:bg-red-700';
+                                break;
 
-                        <button
-                            id="checkOutBtn"
-                            class="px-5 py-3 bg-red-600 hover:bg-red-700 rounded-xl text-white">
+                            default:
+                                $buttonText = 'Shift Completed';
+                                $buttonClass = 'bg-gray-500';
 
-                            Check Out
+                        }
 
-                        </button>
+                    @endphp
 
-                    @else
+                    <button
+                        id="attendanceBtn"
+                        data-action="{{ $attendanceAction }}"
+                        data-attendance="{{ $todayAttendance->id }}"
+                        class="px-5 py-3 rounded-xl text-white transition-all duration-300 {{ $buttonClass }}
+                            disabled:opacity-50 disabled:cursor-not-allowed"
+                        {{ $attendanceAction == 'completed' ? 'disabled' : '' }}>
 
-                        <span class="px-5 py-3 rounded-xl bg-green-100 text-green-700">
-
-                            Shift Completed
-
+                        <span class="btn-text">
+                            {{ $buttonText }}
                         </span>
 
-                    @endif
+                    </button>
+
+                    <div
+                        id="attendanceMessage"
+                        class="mt-3 text-sm text-gray-600">
+                    </div>
 
                 @endif
 
@@ -325,7 +341,7 @@
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
 
             <h3 class="text-lg font-bold text-gray-900 mb-5">
-                Quick Actions
+                Shift Updates
             </h3>
 
             <div class="space-y-6">
@@ -647,42 +663,301 @@
 
 
 <script>
-    const shiftStart = new Date(
-    "{{ $todayShift?->shift->shift_date }} {{ $todayShift?->shift->start_time }}"
-);
+const attendanceBtn = document.getElementById('attendanceBtn');
 
-function updateCountdown(){
+if(attendanceBtn){
 
-    const now = new Date();
+    attendanceBtn.addEventListener('click', function(){
 
-    const diff = shiftStart - now;
+        if(this.dataset.action === 'checkin'){
 
-    if(diff <= 0){
+            checkIn();
 
-        document.getElementById("countdownContainer").style.display="none";
+        }else if(this.dataset.action === 'checkout'){
 
-        document.getElementById("checkInContainer").style.display="block";
+            checkOut();
+
+        }
+
+    });
+
+}
+
+/*
+|--------------------------------------------------------------------------
+| UI Helpers
+|--------------------------------------------------------------------------
+*/
+
+function setButtonLoading(text) {
+
+    attendanceBtn.disabled = true;
+
+    attendanceBtn.querySelector('.btn-text').innerHTML = text;
+
+}
+
+function resetButton(text) {
+
+    attendanceBtn.disabled = false;
+
+    attendanceBtn.querySelector('.btn-text').innerHTML = text;
+
+}
+
+function showMessage(message, type = 'success') {
+
+    attendanceMessage.innerHTML = message;
+
+    attendanceMessage.className = "mt-3 text-sm";
+
+    switch (type) {
+
+        case 'success':
+            attendanceMessage.classList.add('text-green-600');
+            break;
+
+        case 'error':
+            attendanceMessage.classList.add('text-red-600');
+            break;
+
+        case 'warning':
+            attendanceMessage.classList.add('text-yellow-600');
+            break;
+
+        default:
+            attendanceMessage.classList.add('text-gray-600');
+
+    }
+
+}
+
+/*
+|--------------------------------------------------------------------------
+| GPS Helper
+|--------------------------------------------------------------------------
+*/
+
+function getCurrentLocation() {
+
+    return new Promise((resolve, reject) => {
+
+        if (!navigator.geolocation) {
+
+            reject("Your browser doesn't support GPS.");
+
+            return;
+
+        }
+
+        navigator.geolocation.getCurrentPosition(
+
+            (position) => {
+
+                resolve({
+
+                    latitude: position.coords.latitude,
+
+                    longitude: position.coords.longitude
+
+                });
+
+            },
+
+            (error) => {
+
+                let message = "Unable to get your location.";
+
+                switch (error.code) {
+
+                    case error.PERMISSION_DENIED:
+                        message = "Location permission denied.";
+                        break;
+
+                    case error.POSITION_UNAVAILABLE:
+                        message = "Location unavailable.";
+                        break;
+
+                    case error.TIMEOUT:
+                        message = "Location request timed out.";
+                        break;
+
+                }
+
+                reject(message);
+
+            },
+
+            {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 0
+            }
+
+        );
+
+    });
+
+}
+
+/*
+|--------------------------------------------------------------------------
+| Attendance API Helper
+|--------------------------------------------------------------------------
+*/
+
+async function sendAttendance(url) {
+
+    try {
+
+        setButtonLoading("Getting Location...");
+
+        const location = await getCurrentLocation();
+
+       const action = attendanceBtn.dataset.action;
+
+        if (action === "checkin") {
+
+            setButtonLoading("Checking In...");
+
+        } else {
+
+            setButtonLoading("Checking Out...");
+
+        }
+
+        const response = await fetch(url, {
+
+            method: "POST",
+
+            headers: {
+
+                "Content-Type": "application/json",
+
+                "X-CSRF-TOKEN":
+                    document
+                        .querySelector('meta[name="csrf-token"]')
+                        .content
+
+            },
+
+            body: JSON.stringify({
+
+                attendance_id:
+                    attendanceBtn.dataset.attendance,
+
+                latitude:
+                    location.latitude,
+
+                longitude:
+                    location.longitude
+
+            })
+
+        });
+
+        return await response.json();
+
+    } catch (error) {
+
+        return {
+
+            success: false,
+
+            message: error
+
+        };
+
+    }
+
+}
+
+/*
+|--------------------------------------------------------------------------
+| Check In
+|--------------------------------------------------------------------------
+*/
+
+async function checkIn() {
+
+    const result = await sendAttendance(
+        "{{ route('staff.attendance.checkin') }}"
+    );
+
+    if (!result.success) {
+
+        resetButton("Check In");
+
+        showMessage(result.message, "error");
 
         return;
 
     }
 
-    const hrs = Math.floor(diff / 1000 / 60 / 60);
+    showMessage(result.message, "success");
 
-    const mins = Math.floor((diff / 1000 / 60) % 60);
+    attendanceBtn.dataset.action = "checkout";
 
-    const secs = Math.floor((diff / 1000) % 60);
+    attendanceBtn.classList.remove(
+        "bg-green-600",
+        "hover:bg-green-700",
+        "bg-yellow-600",
+        "hover:bg-yellow-700"
+    );
 
-    document.getElementById("hours").innerHTML=hrs;
+    attendanceBtn.classList.add(
+        "bg-red-600",
+        "hover:bg-red-700"
+    );
 
-    document.getElementById("minutes").innerHTML=mins;
+    attendanceBtn.querySelector(".btn-text").innerHTML = "Check Out";
 
-    document.getElementById("seconds").innerHTML=secs;
+    attendanceBtn.disabled = false;
 
 }
 
-updateCountdown();
+/*
+|--------------------------------------------------------------------------
+| Check Out
+|--------------------------------------------------------------------------
+*/
 
-setInterval(updateCountdown,1000);
+async function checkOut() {
+
+    const result = await sendAttendance(
+        "{{ route('staff.attendance.checkout') }}"
+    );
+
+    if (!result.success) {
+
+        resetButton("Check Out");
+
+        showMessage(result.message, "error");
+
+        return;
+
+    }
+
+    showMessage(result.message, "success");
+
+    attendanceBtn.dataset.action = "completed";
+
+    attendanceBtn.classList.remove(
+        "bg-red-600",
+        "hover:bg-red-700"
+    );
+
+    attendanceBtn.classList.add(
+        "bg-gray-500"
+    );
+
+    attendanceBtn.querySelector(".btn-text").innerHTML =
+        "Shift Completed";
+
+    attendanceBtn.disabled = true;
+
+}
 </script>
+
+
 @endsection

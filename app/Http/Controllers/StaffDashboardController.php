@@ -43,35 +43,57 @@ class StaffDashboardController extends Controller
         $todayAttendance = optional($todayShift)->attendance;
 
         $todayStatus = 'Off Duty';
+        $attendanceAction = null;
 
         if ($todayAttendance) {
 
-            switch ($todayAttendance->status) {
+            // Employee has not checked in yet
+            if (
+                is_null($todayAttendance->check_in_time) &&
+                is_null($todayAttendance->check_out_time)
+            ) {
 
-                case 'Pending':
-                    $todayStatus = 'Ready to Check In';
-                    break;
+                $attendanceAction = 'checkin';
 
-                case 'Checked In':
-                    $todayStatus = 'Currently Working';
-                    break;
+                $todayStatus = match ($todayAttendance->status) {
 
-                case 'Checked Out':
-                    $todayStatus = 'Shift Completed';
-                    break;
+                    'Late'    => 'Late Check In',
+                    'Absent'  => 'Absent',
+                    default   => 'Ready to Check In',
 
-                case 'Late':
-                    $todayStatus = 'Late Check In';
-                    break;
+                };
 
-                case 'Absent':
-                    $todayStatus = 'Absent';
-                    break;
-
-                case 'Early Leave':
-                    $todayStatus = 'Left Early';
-                    break;
             }
+
+            // Employee has checked in but not checked out
+            elseif (
+                !is_null($todayAttendance->check_in_time) &&
+                is_null($todayAttendance->check_out_time)
+            ) {
+
+                $attendanceAction = 'checkout';
+
+                $todayStatus = 'Currently Working';
+
+            }
+
+            // Employee has completed the shift
+            elseif (
+                !is_null($todayAttendance->check_in_time) &&
+                !is_null($todayAttendance->check_out_time)
+            ) {
+
+                $attendanceAction = 'completed';
+
+                $todayStatus = match ($todayAttendance->status) {
+
+                    'Early Leave' => 'Left Early',
+                    default       => 'Shift Completed',
+
+                };
+
+            }
+
         }
 
         /*
@@ -166,6 +188,7 @@ class StaffDashboardController extends Controller
             'todayShift',
             'todayAttendance',
             'todayStatus',
+            'attendanceAction',
             'nextShift',
             'assignedShifts',
             'completedShifts',

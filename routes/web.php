@@ -177,6 +177,12 @@ use App\Http\Controllers\StaffShiftController;
 
         Route::post('/my-shifts/{id}/decline', [StaffShiftController::class, 'decline'])
             ->name('shifts.decline');
+
+        Route::post('/attendance/check-in', [AttendanceController::class, 'checkIn'])
+            ->name('attendance.checkin');
+
+        Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut'])
+            ->name('attendance.checkout');
         
 
     });
