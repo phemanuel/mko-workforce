@@ -643,7 +643,46 @@
 
 </div>
 
-
 </div>
 
+
+<script>
+    const shiftStart = new Date(
+    "{{ $todayShift?->shift->shift_date }} {{ $todayShift?->shift->start_time }}"
+);
+
+function updateCountdown(){
+
+    const now = new Date();
+
+    const diff = shiftStart - now;
+
+    if(diff <= 0){
+
+        document.getElementById("countdownContainer").style.display="none";
+
+        document.getElementById("checkInContainer").style.display="block";
+
+        return;
+
+    }
+
+    const hrs = Math.floor(diff / 1000 / 60 / 60);
+
+    const mins = Math.floor((diff / 1000 / 60) % 60);
+
+    const secs = Math.floor((diff / 1000) % 60);
+
+    document.getElementById("hours").innerHTML=hrs;
+
+    document.getElementById("minutes").innerHTML=mins;
+
+    document.getElementById("seconds").innerHTML=secs;
+
+}
+
+updateCountdown();
+
+setInterval(updateCountdown,1000);
+</script>
 @endsection

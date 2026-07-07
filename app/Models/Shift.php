@@ -23,6 +23,9 @@ class Shift extends Model
         'latitude',
         'longitude',
         'attachment',
+        'timezone',
+        'check_in_open_minutes',
+        'late_after_minutes',
     ];
 
     /*

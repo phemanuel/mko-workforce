@@ -462,103 +462,274 @@
 
         <!-- BODY (SCROLLABLE) -->
         <form id="createShiftForm"
-              enctype="multipart/form-data"
-              class="p-6 space-y-5 overflow-y-auto flex-1">
+            enctype="multipart/form-data"
+            class="p-6 overflow-y-auto flex-1 space-y-8">
 
-            <!-- GRID -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- ================= BASIC INFORMATION ================= -->
+            <div>
+                <h3 class="text-base font-semibold border-b pb-2 mb-4">
+                    Basic Information
+                </h3>
 
-                <div>
-                    <label class="text-sm font-medium">Shift Title</label>
-                    <input id="shift_title" name="title"
-                           class="w-full border rounded-xl p-3 mt-1">
-                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-                <div>
-                    <label class="text-sm font-medium">Role Required</label>
-                    <select id="shift_role_required" name="role_required"
+                    <div>
+                        <label class="text-sm font-medium">Shift Title</label>
+                        <input id="shift_title"
+                            name="title"
                             class="w-full border rounded-xl p-3 mt-1">
-                        <option value="">Select Role</option>
-                        <option value="SIA Security">SIA Security</option>
-                        <option value="Cleaning Services">Cleaning Services</option>
-                        <option value="Companion Support">Companion Support</option>
-                        <option value="Back Support Services">Back Support Services</option>
-                    </select>
-                </div>
+                    </div>
 
-                <div>
-                    <label class="text-sm font-medium">Supervisor</label>
-                    <select id="shift_supervisor_id" name="supervisor_id"
+                    <div>
+                        <label class="text-sm font-medium">Role Required</label>
+                        <select id="shift_role_required"
+                                name="role_required"
+                                class="w-full border rounded-xl p-3 mt-1">
+                            <option value="">Select Role</option>
+                            <option value="SIA Security">SIA Security</option>
+                            <option value="Cleaning Services">Cleaning Services</option>
+                            <option value="Companion Support">Companion Support</option>
+                            <option value="Back Support Services">Back Support Services</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="text-sm font-medium">Supervisor</label>
+                        <select id="shift_supervisor_id"
+                                name="supervisor_id"
+                                class="w-full border rounded-xl p-3 mt-1">
+                            <option value="">
+                                Select Supervisor (Admin fallback allowed)
+                            </option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="text-sm font-medium">Shift Date</label>
+                        <input type="date"
+                            id="shift_date"
+                            name="shift_date"
                             class="w-full border rounded-xl p-3 mt-1">
-                        <option value="">Select Supervisor (Admin fallback allowed)</option>
-                    </select>
-                </div>
+                    </div>
 
-                <div>
-                    <label class="text-sm font-medium">Shift Date</label>
-                    <input type="date" id="shift_date" name="shift_date"
-                           class="w-full border rounded-xl p-3 mt-1">
                 </div>
+            </div>
 
-                <div>
-                    <label class="text-sm font-medium">Location</label>
-                    <input id="shift_location" name="location"
-                           class="w-full border rounded-xl p-3 mt-1">
-                </div>
+            <!-- ================= LOCATION & TIME ================= -->
+            <div>
 
-                <div>
-                    <label class="text-sm font-medium">Start Time</label>
-                    <input type="time" id="shift_start_time" name="start_time"
-                           class="w-full border rounded-xl p-3 mt-1">
-                </div>
+                <h3 class="text-base font-semibold border-b pb-2 mb-4">
+                    Location & Time
+                </h3>
 
-                <div>
-                    <label class="text-sm font-medium">End Time</label>
-                    <input type="time" id="shift_end_time" name="end_time"
-                           class="w-full border rounded-xl p-3 mt-1">
-                </div>
+                <div class="space-y-5">
 
-                <div>
-                    <label class="text-sm font-medium">Required Staff</label>
-                    <input type="number" id="shift_required_staff" name="required_staff"
-                           class="w-full border rounded-xl p-3 mt-1">
-                </div>
+                    <div>
+                        <label class="text-sm font-medium">Location</label>
+                        <input id="shift_location"
+                            name="location"
+                            class="w-full border rounded-xl p-3 mt-1">
+                    </div>
 
-                <div>
-                    <label class="text-sm font-medium">Hourly Rate</label>
-                    <input type="number" step="0.01" id="shift_hourly_rate" name="hourly_rate"
-                           class="w-full border rounded-xl p-3 mt-1">
-                </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
 
-                <div class="md:col-span-2">
-                    <label class="text-sm font-medium">Attachment</label>
-                    <input type="file" id="shift_attachment" name="attachment"
-                           class="w-full border rounded-xl p-3 mt-1">
+                        <div>
+                            <label class="text-sm font-medium">Start Time</label>
+                            <input type="time"
+                                id="shift_start_time"
+                                name="start_time"
+                                class="w-full border rounded-xl p-3 mt-1">
+                        </div>
+
+                        <div>
+                            <label class="text-sm font-medium">End Time</label>
+                            <input type="time"
+                                id="shift_end_time"
+                                name="end_time"
+                                class="w-full border rounded-xl p-3 mt-1">
+                        </div>
+
+                        <div>
+                            <label class="text-sm font-medium">Time Zone</label>
+                            <select id="shift_timezone"
+                                    name="timezone"
+                                    class="w-full border rounded-xl p-3 mt-1">
+
+                                <option value="Europe/London" selected>🇬🇧 Europe/London</option>
+                                <option value="Africa/Lagos">🇳🇬 Africa/Lagos</option>
+                                <option value="Europe/Dublin">🇮🇪 Europe/Dublin</option>
+                                <option value="Europe/Paris">🇫🇷 Europe/Paris</option>
+                                <option value="Europe/Berlin">🇩🇪 Europe/Berlin</option>
+                                <option value="America/New_York">🇺🇸 America/New_York</option>
+                                <option value="America/Chicago">🇺🇸 America/Chicago</option>
+                                <option value="America/Los_Angeles">🇺🇸 America/Los_Angeles</option>
+                                <option value="Asia/Dubai">🇦🇪 Asia/Dubai</option>
+                                <option value="Asia/Tokyo">🇯🇵 Asia/Tokyo</option>
+                                <option value="Australia/Sydney">🇦🇺 Australia/Sydney</option>
+                                <option value="UTC">🌍 UTC</option>
+
+                            </select>
+                        </div>
+
+                    </div>
+
                 </div>
 
             </div>
 
-            <!-- TEXT AREAS -->
-            <div>
-                <label class="text-sm font-medium">Instructions</label>
-                <textarea id="shift_instructions" name="instructions"
-                          rows="3"
-                          class="w-full border rounded-xl p-3 mt-1"></textarea>
-            </div>
+            <!-- ================= ATTENDANCE SETTINGS ================= -->
 
             <div>
-                <label class="text-sm font-medium">Notes</label>
-                <textarea id="shift_notes" name="notes"
-                          rows="3"
-                          class="w-full border rounded-xl p-3 mt-1"></textarea>
+
+                <h3 class="text-base font-semibold border-b pb-2 mb-4">
+                    Attendance Settings
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                    <div>
+
+                        <label class="text-sm font-medium">
+                            Check-In Opens
+                        </label>
+
+                        <div class="relative mt-1">
+
+                            <input type="number"
+                                id="check_in_open_minutes"
+                                name="check_in_open_minutes"
+                                value="30"
+                                min="0"
+                                max="180"
+                                class="w-full border rounded-xl p-3 pr-24">
+
+                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+                                mins before
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div>
+
+                        <label class="text-sm font-medium">
+                            Late Threshold
+                        </label>
+
+                        <div class="relative mt-1">
+
+                            <input type="number"
+                                id="late_after_minutes"
+                                name="late_after_minutes"
+                                value="15"
+                                min="0"
+                                max="180"
+                                class="w-full border rounded-xl p-3 pr-28">
+
+                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+                                mins after start
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <p class="mt-3 text-xs text-gray-500">
+                    Employees can check in <strong>30 minutes before</strong> the shift starts.
+                    Any check-in after <strong>15 minutes</strong> from the scheduled start
+                    time will automatically be marked as <strong>Late</strong>.
+                </p>
+
+            </div>
+
+            <!-- ================= STAFF & PAY ================= -->
+
+            <div>
+
+                <h3 class="text-base font-semibold border-b pb-2 mb-4">
+                    Staff & Payment
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                    <div>
+                        <label class="text-sm font-medium">Required Staff</label>
+                        <input type="number"
+                            id="shift_required_staff"
+                            name="required_staff"
+                            class="w-full border rounded-xl p-3 mt-1">
+                    </div>
+
+                    <div>
+                        <label class="text-sm font-medium">Hourly Rate</label>
+                        <input type="number"
+                            step="0.01"
+                            id="shift_hourly_rate"
+                            name="hourly_rate"
+                            class="w-full border rounded-xl p-3 mt-1">
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- ================= ATTACHMENT ================= -->
+
+            <div>
+
+                <h3 class="text-base font-semibold border-b pb-2 mb-4">
+                    Attachment
+                </h3>
+
+                <input type="file"
+                    id="shift_attachment"
+                    name="attachment"
+                    class="w-full border rounded-xl p-3">
+
+            </div>
+
+            <!-- ================= INSTRUCTIONS ================= -->
+
+            <div>
+
+                <h3 class="text-base font-semibold border-b pb-2 mb-4">
+                    Additional Information
+                </h3>
+
+                <div class="space-y-5">
+
+                    <div>
+                        <label class="text-sm font-medium">Instructions</label>
+                        <textarea id="shift_instructions"
+                                name="instructions"
+                                rows="3"
+                                class="w-full border rounded-xl p-3 mt-1"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="text-sm font-medium">Notes</label>
+                        <textarea id="shift_notes"
+                                name="notes"
+                                rows="3"
+                                class="w-full border rounded-xl p-3 mt-1"></textarea>
+                    </div>
+
+                </div>
+
             </div>
 
             <!-- BUTTON -->
-            <div class="flex justify-end pt-2">
+
+            <div class="flex justify-end border-t pt-5">
+
                 <button type="submit"
-                        class="bg-black hover:bg-gray-800 text-white px-6 py-3 rounded-xl">
+                        class="bg-black hover:bg-gray-800 text-white px-8 py-3 rounded-xl">
                     Save Shift
                 </button>
+
             </div>
 
         </form>
@@ -584,71 +755,256 @@
 
         <!-- BODY (SCROLLABLE) -->
         <form id="editShiftForm"
-              class="p-6 overflow-y-auto flex-1 space-y-5">
+      class="p-6 overflow-y-auto flex-1 space-y-8">
 
-            <input type="hidden" id="edit_shift_id" name="shift_id">
+            <input type="hidden"
+                id="edit_shift_id"
+                name="shift_id">
 
-            <!-- GRID -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- ================= BASIC INFORMATION ================= -->
+            <div>
 
-                <input id="edit_title" name="title"
-                       class="w-full border p-3 rounded-xl"
-                       placeholder="Title">
+                <h3 class="text-base font-semibold border-b pb-2 mb-4">
+                    Basic Information
+                </h3>
 
-                <input id="edit_shift_date" name="shift_date"
-                       type="date"
-                       class="w-full border p-3 rounded-xl">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-                <input id="edit_start_time" name="start_time"
-                       type="time"
-                       class="w-full border p-3 rounded-xl">
+                    <div>
+                        <label class="text-sm font-medium">Shift Title</label>
+                        <input id="edit_title"
+                            name="title"
+                            class="w-full border rounded-xl p-3 mt-1">
+                    </div>
 
-                <input id="edit_end_time" name="end_time"
-                       type="time"
-                       class="w-full border p-3 rounded-xl">
+                    <div>
+                        <label class="text-sm font-medium">Shift Date</label>
+                        <input id="edit_shift_date"
+                            name="shift_date"
+                            type="date"
+                            class="w-full border rounded-xl p-3 mt-1">
+                    </div>
 
-                <input id="edit_location" name="location"
-                       class="w-full border p-3 rounded-xl"
-                       placeholder="Location">
+                    <div>
+                        <label class="text-sm font-medium">Supervisor</label>
+                        <select id="edit_supervisor_id"
+                                name="supervisor_id"
+                                class="w-full border rounded-xl p-3 mt-1">
+                            <option value="">Select Supervisor (Admin fallback allowed)</option>
+                        </select>
+                    </div>
 
-                <input id="edit_required_staff" name="required_staff"
-                       type="number"
-                       class="w-full border p-3 rounded-xl">
+                    <div>
+                        <label class="text-sm font-medium">Status</label>
+                        <select id="edit_status"
+                                name="status"
+                                class="w-full border rounded-xl p-3 mt-1">
+                            <option value="Open">Open</option>
+                            <option value="Assigned">Assigned</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                    </div>
 
-                <input id="edit_hourly_rate" name="hourly_rate"
-                       class="w-full border p-3 rounded-xl">
-
-                <select id="edit_supervisor_id" name="supervisor_id"
-                        class="w-full border p-3 rounded-xl">
-                    <option value="">Select Supervisor (Admin fallback allowed)</option>
-                </select>
-
-                <select id="edit_status" name="status"
-                        class="w-full border p-3 rounded-xl">
-                    <option value="Open">Open</option>
-                    <option value="Assigned">Assigned</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Cancelled">Cancelled</option>
-                </select>
+                </div>
 
             </div>
 
-            <!-- TEXT AREAS -->
-            <textarea id="edit_instructions" name="instructions"
-                      class="w-full border p-3 rounded-xl"
-                      placeholder="Instructions"></textarea>
+            <!-- ================= LOCATION & TIME ================= -->
+            <div>
 
-            <textarea id="edit_notes" name="notes"
-                      class="w-full border p-3 rounded-xl"
-                      placeholder="Notes"></textarea>
+                <h3 class="text-base font-semibold border-b pb-2 mb-4">
+                    Location & Time
+                </h3>
 
-            <!-- BUTTON -->
-            <button type="submit"
-                    class="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-800">
+                <div class="space-y-5">
 
-                Save Changes
+                    <div>
+                        <label class="text-sm font-medium">Location</label>
+                        <input id="edit_location"
+                            name="location"
+                            class="w-full border rounded-xl p-3 mt-1">
+                    </div>
 
-            </button>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+                        <div>
+                            <label class="text-sm font-medium">Start Time</label>
+                            <input id="edit_start_time"
+                                name="start_time"
+                                type="time"
+                                class="w-full border rounded-xl p-3 mt-1">
+                        </div>
+
+                        <div>
+                            <label class="text-sm font-medium">End Time</label>
+                            <input id="edit_end_time"
+                                name="end_time"
+                                type="time"
+                                class="w-full border rounded-xl p-3 mt-1">
+                        </div>
+
+                        <div>
+                            <label class="text-sm font-medium">Time Zone</label>
+                            <select id="edit_timezone"
+                                    name="timezone"
+                                    class="w-full border rounded-xl p-3 mt-1">
+
+                                <option value="Europe/London">🇬🇧 Europe/London</option>
+                                <option value="Africa/Lagos">🇳🇬 Africa/Lagos</option>
+                                <option value="Europe/Dublin">🇮🇪 Europe/Dublin</option>
+                                <option value="Europe/Paris">🇫🇷 Europe/Paris</option>
+                                <option value="Europe/Berlin">🇩🇪 Europe/Berlin</option>
+                                <option value="America/New_York">🇺🇸 America/New_York</option>
+                                <option value="America/Chicago">🇺🇸 America/Chicago</option>
+                                <option value="America/Los_Angeles">🇺🇸 America/Los_Angeles</option>
+                                <option value="Asia/Dubai">🇦🇪 Asia/Dubai</option>
+                                <option value="Asia/Tokyo">🇯🇵 Asia/Tokyo</option>
+                                <option value="Australia/Sydney">🇦🇺 Australia/Sydney</option>
+                                <option value="UTC">🌍 UTC</option>
+
+                            </select>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- ================= ATTENDANCE SETTINGS ================= -->
+            <div>
+
+                <h3 class="text-base font-semibold border-b pb-2 mb-4">
+                    Attendance Settings
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                    <div>
+
+                        <label class="text-sm font-medium">
+                            Check-In Opens
+                        </label>
+
+                        <div class="relative mt-1">
+
+                            <input id="edit_check_in_open_minutes"
+                                name="check_in_open_minutes"
+                                type="number"
+                                min="0"
+                                max="180"
+                                class="w-full border rounded-xl p-3 pr-24">
+
+                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+                                mins before
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div>
+
+                        <label class="text-sm font-medium">
+                            Late Threshold
+                        </label>
+
+                        <div class="relative mt-1">
+
+                            <input id="edit_late_after_minutes"
+                                name="late_after_minutes"
+                                type="number"
+                                min="0"
+                                max="180"
+                                class="w-full border rounded-xl p-3 pr-28">
+
+                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+                                mins after start
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <p class="mt-3 text-xs text-gray-500">
+                    Employees can check in this many minutes before the shift starts.
+                    Any check-in after the late threshold will automatically be marked
+                    as <strong>Late</strong>.
+                </p>
+
+            </div>
+
+            <!-- ================= STAFF & PAYMENT ================= -->
+            <div>
+
+                <h3 class="text-base font-semibold border-b pb-2 mb-4">
+                    Staff & Payment
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                    <div>
+                        <label class="text-sm font-medium">Required Staff</label>
+                        <input id="edit_required_staff"
+                            name="required_staff"
+                            type="number"
+                            class="w-full border rounded-xl p-3 mt-1">
+                    </div>
+
+                    <div>
+                        <label class="text-sm font-medium">Hourly Rate</label>
+                        <input id="edit_hourly_rate"
+                            name="hourly_rate"
+                            type="number"
+                            step="0.01"
+                            class="w-full border rounded-xl p-3 mt-1">
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- ================= ADDITIONAL INFORMATION ================= -->
+            <div>
+
+                <h3 class="text-base font-semibold border-b pb-2 mb-4">
+                    Additional Information
+                </h3>
+
+                <div class="space-y-5">
+
+                    <div>
+                        <label class="text-sm font-medium">Instructions</label>
+                        <textarea id="edit_instructions"
+                                name="instructions"
+                                rows="3"
+                                class="w-full border rounded-xl p-3 mt-1"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="text-sm font-medium">Notes</label>
+                        <textarea id="edit_notes"
+                                name="notes"
+                                rows="3"
+                                class="w-full border rounded-xl p-3 mt-1"></textarea>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- ================= BUTTON ================= -->
+            <div class="flex justify-end border-t pt-5">
+
+                <button type="submit"
+                        class="bg-black hover:bg-gray-800 text-white px-8 py-3 rounded-xl">
+                    Save Changes
+                </button>
+
+            </div>
 
         </form>
 
@@ -1119,7 +1475,12 @@ window.openEditShiftModal = async function (id)
         document.getElementById('edit_title').value = shift.title ?? '';
         document.getElementById('edit_shift_date').value = shift.shift_date ?? '';
         document.getElementById('edit_start_time').value = shift.start_time ?? '';
-        document.getElementById('edit_end_time').value = shift.end_time ?? '';
+        document.getElementById('edit_end_time').value = shift.end_time ?? '';        
+        document.getElementById('edit_timezone').value = shift.timezone ?? '';
+        document.getElementById('edit_check_in_open_minutes').value =
+            shift.check_in_open_minutes ?? '30';
+        document.getElementById('edit_late_after_minutes').value =
+            shift.late_after_minutes ?? '15';
         document.getElementById('edit_location').value = shift.location ?? '';
         document.getElementById('edit_required_staff').value = shift.required_staff ?? '';
         document.getElementById('edit_hourly_rate').value = shift.hourly_rate ?? '';
@@ -1174,6 +1535,9 @@ document.getElementById('editShiftForm')
     formData.append('shift_date', document.getElementById('edit_shift_date').value);
     formData.append('start_time', document.getElementById('edit_start_time').value);
     formData.append('end_time', document.getElementById('edit_end_time').value);
+    formData.append('timezone', document.getElementById('edit_timezone').value);
+    formData.append('check_in_open_minutes', document.getElementById('edit_check_in_open_minutes').value);
+    formData.append('late_after_minutes', document.getElementById('edit_late_after_minutes').value);
     formData.append('location', document.getElementById('edit_location').value);
     formData.append('required_staff', document.getElementById('edit_required_staff').value);
     formData.append('hourly_rate', document.getElementById('edit_hourly_rate').value);
