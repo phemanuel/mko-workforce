@@ -51,11 +51,11 @@
             </div>
 
             <h2 class="text-3xl font-bold text-gray-900">
-                {{ $assignedCount }}
+                {{ $pendingShifts }}
             </h2>
 
             <p class="text-sm text-gray-500 mt-1">
-                Pending Assignments
+                Pending Shifts
             </p>
 
         </div>
@@ -70,17 +70,17 @@
                 </div>
 
                 <span class="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full">
-                    Accepted
+                   Completed
                 </span>
 
             </div>
 
             <h2 class="text-3xl font-bold text-gray-900">
-                {{ $acceptedCount }}
+               {{ $completedShifts }}
             </h2>
 
             <p class="text-sm text-gray-500 mt-1">
-                Accepted Shifts
+                Completed Shifts
             </p>
 
         </div>
@@ -95,17 +95,17 @@
                 </div>
 
                 <span class="text-xs bg-red-50 text-red-700 px-3 py-1 rounded-full">
-                    Declined
+                    Today
                 </span>
 
             </div>
 
             <h2 class="text-3xl font-bold text-gray-900">
-                {{ $declinedCount }}
+                {{ $todayShifts }}
             </h2>
 
             <p class="text-sm text-gray-500 mt-1">
-                Declined Shifts
+                Todays Shifts
             </p>
 
         </div>
@@ -120,23 +120,407 @@
                 </div>
 
                 <span class="text-xs bg-blue-50 text-blue-700 px-3 py-1 rounded-full">
-                    Completed
+                    Upcoming
                 </span>
 
             </div>
 
             <h2 class="text-3xl font-bold text-gray-900">
-                {{ $completedCount }}
+                {{ $upcomingShifts }}
             </h2>
 
             <p class="text-sm text-gray-500 mt-1">
-                Completed Shifts
+                Upcoming Shifts
             </p>
 
         </div>
 
     </div>
+    
 
+    <!-- MAIN GRID -->
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+        <!-- TODAY SHIFT -->
+        <div class="xl:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+
+            <div class="flex items-center justify-between mb-6">
+
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900">
+                        Today's Shift
+                    </h3>
+
+                    <p class="text-sm text-gray-500">
+                        Your currently assigned shift
+                    </p>
+                </div>
+
+                <span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs">
+
+                    {{ $todayStatus }}
+
+                </span>
+
+            </div>
+
+            @if($todayShift)
+
+        <div class="space-y-6">
+
+            <div>
+
+                <h3 class="text-xl font-semibold">
+
+                    {{ $todayShift->shift->title }}
+
+                </h3>
+
+                <p class="text-gray-500">
+
+                    {{ $todayShift->shift->location }}
+
+                </p>
+
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-4">
+
+                <div>
+
+                    <p class="text-xs text-gray-500">
+
+                        Shift Start
+
+                    </p>
+
+                    <p class="font-semibold">
+
+                        {{ \Carbon\Carbon::parse($todayShift->shift->start_time)->format('h:i A') }}
+
+                    </p>
+
+                </div>
+
+                <div>
+
+                    <p class="text-xs text-gray-500">
+
+                        Shift End 
+
+                    </p>
+
+                    <p class="font-semibold">
+
+                        {{ \Carbon\Carbon::parse($todayShift->shift->end_time)->format('h:i A') }}
+
+                    </p>
+
+                </div>
+
+                <div>
+
+                    <p class="text-xs text-gray-500">
+
+                        Supervisor
+
+                    </p>
+
+                    <p class="font-semibold">
+
+                        {{ optional($todayShift->shift->supervisor)->name ?? 'Administrator' }}
+
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="flex flex-wrap gap-3">
+
+                @if($todayAttendance)
+
+                    @php
+
+                        $buttonText = '';
+                        $buttonClass = '';
+
+                        switch ($attendanceAction) {
+
+                            case 'checkin':
+                                $buttonText = 'Check In';
+                                $buttonClass = $todayAttendance->status == 'Late'
+                                    ? 'bg-yellow-600 hover:bg-yellow-700'
+                                    : 'bg-green-600 hover:bg-green-700';
+                                break;
+
+                            case 'checkout':
+                                $buttonText = 'Check Out';
+                                $buttonClass = 'bg-red-600 hover:bg-red-700';
+                                break;
+
+                            default:
+                                $buttonText = 'Shift Completed';
+                                $buttonClass = 'bg-gray-500';
+
+                        }
+
+                    @endphp
+
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mt-6">
+
+                        <!-- Attendance Summary -->
+
+                        <div class="grid grid-cols-3 gap-4 flex-1">
+
+                            <!-- Check In -->
+
+                            <div class="bg-gray-50 rounded-2xl p-4 border">
+
+                                <p class="text-xs uppercase tracking-wide text-gray-500">
+
+                                    Check In
+
+                                </p>
+
+                                <p class="mt-2 text-lg font-semibold text-slate-800">
+
+                                    {{ $todayAttendance->check_in_time
+                                        ? $todayAttendance->check_in_time->format('g:i A')
+                                        : '--' }}
+
+                                </p>
+
+                            </div>
+
+                            <!-- Check Out -->
+
+                            <div class="bg-gray-50 rounded-2xl p-4 border">
+
+                                <p class="text-xs uppercase tracking-wide text-gray-500">
+
+                                    Check Out
+
+                                </p>
+
+                                <p class="mt-2 text-lg font-semibold text-slate-800">
+
+                                    {{ $todayAttendance->check_out_time
+                                        ? $todayAttendance->check_out_time->format('g:i A')
+                                        : '--' }}
+
+                                </p>
+
+                            </div>
+
+                            <!-- Worked Hours -->
+
+                            <div class="bg-gray-50 rounded-2xl p-4 border">
+
+                                <p class="text-xs uppercase tracking-wide text-gray-500">
+
+                                    Worked
+
+                                </p>
+
+                                <p class="mt-2 text-lg font-semibold text-slate-800">
+
+                                    @if($todayAttendance->check_in_time)
+
+                                        @php
+
+                                            $end = $todayAttendance->check_out_time ?? now();
+
+                                            $minutes = $todayAttendance->check_in_time->diffInMinutes($end);
+
+                                            $hours = floor($minutes / 60);
+
+                                            $mins = $minutes % 60;
+
+                                        @endphp
+
+                                        {{ $hours }}h {{ $mins }}m
+
+                                    @else
+
+                                        --
+
+                                    @endif
+
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <!-- Attendance Button -->
+
+                        <div>
+
+                            <button
+                                id="attendanceBtn"
+                                data-action="{{ $attendanceAction }}"
+                                data-attendance="{{ $todayAttendance->id }}"
+                                class="px-6 py-4 rounded-2xl text-white font-semibold transition-all duration-300 {{ $buttonClass }}
+                                    disabled:opacity-50 disabled:cursor-not-allowed"
+                                {{ $attendanceAction == 'completed' ? 'disabled' : '' }}>
+
+                                <span class="btn-text">
+
+                                    {{ $buttonText }}
+
+                                </span>
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                    <div
+                        id="attendanceMessage"
+                        class="mt-3 text-sm text-gray-600">
+                    </div>
+
+                @endif
+
+            </div>
+
+        </div>
+
+    @else
+
+        <div class="text-center py-14">
+
+            <i class="fas fa-calendar-times text-5xl text-gray-300 mb-5"></i>
+
+            <h3 class="text-lg font-semibold">
+
+                No Shift Today
+
+            </h3>
+
+            <p class="text-gray-500 mt-2">
+
+                You're not scheduled for any shift today.
+
+            </p>
+
+        </div>
+
+    @endif
+
+        </div>
+
+        <!-- QUICK ACTIONS -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+
+            <h3 class="text-lg font-bold text-gray-900 mb-5">
+                Shift Updates
+            </h3>
+
+            <div class="space-y-6">
+
+    <!-- NEXT SHIFT -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+
+        <div class="flex items-center justify-between mb-5">
+
+            <div>
+
+                <h3 class="text-lg font-bold text-gray-900">
+                    Next Shift
+                </h3>
+
+                <p class="text-sm text-gray-500">
+                    Your next scheduled assignment
+                </p>
+
+            </div>
+
+            <div class="w-11 h-11 rounded-xl bg-black text-white flex items-center justify-center">
+                <i class="fas fa-calendar-day"></i>
+            </div>
+
+        </div>
+
+        @if($nextShift)
+
+                <div class="space-y-4">
+
+                    <div>
+
+                        <h4 class="font-semibold text-gray-900 text-lg">
+                            {{ $nextShift->shift->title }}
+                        </h4>
+
+                        <p class="text-sm text-gray-500 mt-1">
+                            {{ $nextShift->shift->location }}
+                        </p>
+
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+
+                        <div>
+
+                            <p class="text-gray-500">
+                                Date
+                            </p>
+
+                            <p class="font-medium">
+                                {{ \Carbon\Carbon::parse($nextShift->shift->shift_date)->format('D, d M Y') }}
+                            </p>
+
+                        </div>
+
+                        <div>
+
+                            <p class="text-gray-500">
+                                Time
+                            </p>
+
+                            <p class="font-medium">
+                                {{ \Carbon\Carbon::parse($nextShift->shift->start_time)->format('h:i A') }}
+                                -
+                                {{ \Carbon\Carbon::parse($nextShift->shift->end_time)->format('h:i A') }}
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            @else
+
+                <div class="text-center py-8">
+
+                    <i class="fas fa-calendar-times text-4xl text-gray-300 mb-3"></i>
+
+                    <p class="text-gray-500">
+
+                        No upcoming shift scheduled.
+
+                    </p>
+
+                </div>
+
+            @endif
+
+        </div>
+
+    <!-- QUICK ACTIONS -->
+
+    
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- PAGINATION -->
     <!-- FILTERS + SEARCH -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
 
@@ -154,19 +538,19 @@
                 <a href="{{ route('staff.shifts.index', ['status' => 'Assigned']) }}"
                 class="px-4 py-2 rounded-xl text-sm font-medium transition
                 {{ request('status') == 'Assigned' ? 'bg-yellow-500 text-white' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' }}">
-                    Assigned
+                    Today
                 </a>
 
                 <a href="{{ route('staff.shifts.index', ['status' => 'Accepted']) }}"
                 class="px-4 py-2 rounded-xl text-sm font-medium transition
                 {{ request('status') == 'Accepted' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-700 hover:bg-green-200' }}">
-                    Accepted
+                    Upcoming
                 </a>
 
                 <a href="{{ route('staff.shifts.index', ['status' => 'Declined']) }}"
                 class="px-4 py-2 rounded-xl text-sm font-medium transition
                 {{ request('status') == 'Declined' ? 'bg-red-600 text-white' : 'bg-red-100 text-red-700 hover:bg-red-200' }}">
-                    Declined
+                    Pending
                 </a>
 
                 <a href="{{ route('staff.shifts.index', ['status' => 'Completed']) }}"
@@ -205,189 +589,373 @@
 
     </div>
 
-    <!-- SHIFTS -->
-    <div class="space-y-5">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-6">
 
-        @forelse($assignments as $assignment)
+    <div class="flex items-center justify-between mb-6">
 
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div>
 
-                <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6">
+            <h3 class="text-lg font-bold">
 
-                    <!-- SHIFT DETAILS -->
-                    <div class="space-y-4 flex-1">
+                Recent Assigned Shifts
 
-                        <div class="flex flex-wrap items-center gap-3">
+            </h3>
 
-                            <h2 class="text-xl font-semibold text-gray-900">
-                                {{ $assignment->shift->title }}
-                            </h2>
+            <p class="text-sm text-gray-500">
 
-                            <!-- STATUS -->
-                            @if($assignment->status == 'Assigned')
-                                <span class="bg-yellow-100 text-yellow-700 text-xs px-3 py-1 rounded-full">
-                                    Assigned
-                                </span>
-                            @elseif($assignment->status == 'Accepted')
-                                <span class="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full">
-                                    Accepted
-                                </span>
-                            @elseif($assignment->status == 'Declined')
-                                <span class="bg-red-100 text-red-700 text-xs px-3 py-1 rounded-full">
-                                    Declined
-                                </span>
-                            @else
-                                <span class="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full">
-                                    Completed
-                                </span>
-                            @endif
+                Your latest shift assignments
 
-                        </div>
+            </p>
 
-                        <p class="text-sm text-gray-600">
-                            {{ $assignment->shift->description }}
-                        </p>
+        </div>
 
-                        <!-- INFO GRID -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    </div>
 
-                            <div>
-                                <p class="text-xs text-gray-500">
-                                    Shift Date
-                                </p>
+    <div class="space-y-4">
 
-                                <p class="font-medium text-gray-900">
-                                    {{ \Carbon\Carbon::parse($assignment->shift->shift_date)->format('d M Y') }}
-                                </p>
-                            </div>
+        @forelse($recentShifts as $assignment)
 
-                            <div>
-                                <p class="text-xs text-gray-500">
-                                    Time
-                                </p>
+            <div class="flex items-center justify-between border rounded-xl p-4 hover:bg-gray-50 transition">
 
-                                <p class="font-medium text-gray-900">
-                                    {{ \Carbon\Carbon::parse($assignment->shift->start_time)->format('h:i A') }}
-                                    -
-                                    {{ \Carbon\Carbon::parse($assignment->shift->end_time)->format('h:i A') }}
-                                </p>
-                            </div>
+                <div>
 
-                            <div>
-                                <p class="text-xs text-gray-500">
-                                    Location
-                                </p>
+                    <h4 class="font-semibold">
 
-                                <p class="font-medium text-gray-900">
-                                    {{ $assignment->shift->location }}
-                                </p>
-                            </div>
+                        {{ $assignment->shift->title }}
 
-                            <div>
-                                <p class="text-xs text-gray-500">
-                                    Hourly Rate
-                                </p>
+                    </h4>
 
-                                <p class="font-semibold text-green-600">
-                                    £{{ number_format($assignment->shift->hourly_rate, 2) }}/hr
-                                </p>
-                            </div>
+                    <p class="text-sm text-gray-500 mt-1">
 
-                        </div>
+                        {{ \Carbon\Carbon::parse($assignment->shift->shift_date)->format('D, d M Y') }}
 
-                    </div>
+                        •
 
-                    <!-- ACTIONS -->
-                    <div class="flex flex-col sm:flex-row gap-3">
+                        {{ $assignment->shift->location }}
 
-                        @if($assignment->status == 'Assigned')
-
-                            <!-- ACCEPT -->
-                            <form action="{{ route('staff.shifts.accept', $assignment->id) }}" method="POST">
-                                @csrf
-
-                                <button type="submit"
-                                    class="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl text-sm font-medium transition">
-                                    Accept Shift
-                                </button>
-                            </form>
-
-                            <!-- DECLINE -->
-                            <form action="{{ route('staff.shifts.decline', $assignment->id) }}" method="POST">
-                                @csrf
-
-                                <button type="submit"
-                                    class="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-xl text-sm font-medium transition">
-                                    Decline Shift
-                                </button>
-                            </form>
-
-                            <a href="#"
-                            class="border border-gray-200 hover:bg-gray-100 text-gray-700 px-5 py-3 rounded-xl text-sm font-medium transition text-center">
-                                View Details
-                            </a>
-
-                        @elseif($assignment->status == 'Accepted')
-
-                            <button
-                                class="bg-green-100 text-green-700 px-5 py-3 rounded-xl text-sm font-medium cursor-default">
-                                Shift Accepted
-                            </button>
-
-                        @elseif($assignment->status == 'Declined')
-
-                            <button
-                                class="bg-red-100 text-red-700 px-5 py-3 rounded-xl text-sm font-medium cursor-default">
-                                Shift Declined
-                            </button>
-
-                        @else
-
-                            <button
-                                class="bg-blue-100 text-blue-700 px-5 py-3 rounded-xl text-sm font-medium cursor-default">
-                                Shift Completed
-                            </button>
-
-                        @endif
-
-                    </div>
+                    </p>
 
                 </div>
+
+                <span class="px-3 py-1 rounded-full text-xs
+                    @if($assignment->status=='Assigned')
+                        bg-blue-100 text-blue-700
+                    @elseif($assignment->status=='Accepted')
+                        bg-green-100 text-green-700
+                    @elseif($assignment->status=='Completed')
+                        bg-gray-900 text-white
+                    @else
+                        bg-red-100 text-red-700
+                    @endif">
+
+                    {{ $assignment->status }}
+
+                </span>
 
             </div>
 
         @empty
 
-            <!-- EMPTY STATE -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+            <div class="text-center py-10">
 
-                <div class="flex justify-center mb-4">
+                <i class="fas fa-calendar-times text-5xl text-gray-300 mb-4"></i>
 
-                    <div class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-3xl">
-                        <i class="fas fa-calendar-times"></i>
-                    </div>
+                <p class="text-gray-500">
 
-                </div>
+                    No shifts assigned yet.
 
-                <h3 class="text-lg font-semibold text-gray-800 mb-2">
-                    No Assigned Shifts
-                </h3>
-
-                <p class="text-sm text-gray-500">
-                    You currently do not have any assigned shifts.
                 </p>
 
             </div>
 
         @endforelse
-
-    </div>
-
-    <!-- PAGINATION -->
-    <div>
-        {{ $assignments->links() }}
+        <p>{{$recentShifts->links()}}</p>
     </div>
 
 </div>
 
+</div>
+
+<script>
+const attendanceBtn = document.getElementById('attendanceBtn');
+
+if(attendanceBtn){
+
+    attendanceBtn.addEventListener('click', function(){
+
+        if(this.dataset.action === 'checkin'){
+
+            checkIn();
+
+        }else if(this.dataset.action === 'checkout'){
+
+            checkOut();
+
+        }
+
+    });
+
+}
+
+/*
+|--------------------------------------------------------------------------
+| UI Helpers
+|--------------------------------------------------------------------------
+*/
+
+function setButtonLoading(text) {
+
+    attendanceBtn.disabled = true;
+
+    attendanceBtn.querySelector('.btn-text').innerHTML = text;
+
+}
+
+function resetButton(text) {
+
+    attendanceBtn.disabled = false;
+
+    attendanceBtn.querySelector('.btn-text').innerHTML = text;
+
+}
+
+function showMessage(message, type = 'success') {
+
+    attendanceMessage.innerHTML = message;
+
+    attendanceMessage.className = "mt-3 text-sm";
+
+    switch (type) {
+
+        case 'success':
+            attendanceMessage.classList.add('text-green-600');
+            break;
+
+        case 'error':
+            attendanceMessage.classList.add('text-red-600');
+            break;
+
+        case 'warning':
+            attendanceMessage.classList.add('text-yellow-600');
+            break;
+
+        default:
+            attendanceMessage.classList.add('text-gray-600');
+
+    }
+
+}
+
+/*
+|--------------------------------------------------------------------------
+| GPS Helper
+|--------------------------------------------------------------------------
+*/
+
+function getCurrentLocation() {
+
+    return new Promise((resolve, reject) => {
+
+        if (!navigator.geolocation) {
+
+            reject("Your browser doesn't support GPS.");
+
+            return;
+
+        }
+
+        navigator.geolocation.getCurrentPosition(
+
+            (position) => {
+
+                resolve({
+
+                    latitude: position.coords.latitude,
+
+                    longitude: position.coords.longitude
+
+                });
+
+            },
+
+            (error) => {
+
+                let message = "Unable to get your location.";
+
+                switch (error.code) {
+
+                    case error.PERMISSION_DENIED:
+                        message = "Location permission denied.";
+                        break;
+
+                    case error.POSITION_UNAVAILABLE:
+                        message = "Location unavailable.";
+                        break;
+
+                    case error.TIMEOUT:
+                        message = "Location request timed out.";
+                        break;
+
+                }
+
+                reject(message);
+
+            },
+
+            {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 0
+            }
+
+        );
+
+    });
+
+}
+
+/*
+|--------------------------------------------------------------------------
+| Attendance API Helper
+|--------------------------------------------------------------------------
+*/
+
+async function sendAttendance(url) {
+
+    try {
+
+        setButtonLoading("Getting Location...");
+
+        const location = await getCurrentLocation();
+
+       const action = attendanceBtn.dataset.action;
+
+        if (action === "checkin") {
+
+            setButtonLoading("Checking In...");
+
+        } else {
+
+            setButtonLoading("Checking Out...");
+
+        }
+
+        const response = await fetch(url, {
+
+            method: "POST",
+
+            headers: {
+
+                "Content-Type": "application/json",
+
+                "X-CSRF-TOKEN":
+                    document
+                        .querySelector('meta[name="csrf-token"]')
+                        .content
+
+            },
+
+            body: JSON.stringify({
+
+                attendance_id:
+                    attendanceBtn.dataset.attendance,
+
+                latitude:
+                    location.latitude,
+
+                longitude:
+                    location.longitude
+
+            })
+
+        });
+
+        return await response.json();
+
+    } catch (error) {
+
+        return {
+
+            success: false,
+
+            message: error
+
+        };
+
+    }
+
+}
+
+/*
+|--------------------------------------------------------------------------
+| Check In
+|--------------------------------------------------------------------------
+*/
+
+async function checkIn() {
+
+    const result = await sendAttendance(
+        "{{ route('staff.attendance.checkin') }}"
+    );
+
+    if (!result.success) {
+
+        resetButton("Check In");
+
+        showMessage(result.message, "error");
+
+        return;
+
+    }
+
+    showMessage(result.message, "success");
+
+    attendanceBtn.disabled = true;
+
+    attendanceBtn.querySelector(".btn-text").innerHTML = "Refreshing...";
+
+    setTimeout(() => {
+
+        window.location.reload();
+
+    }, 1200);
+
+}
+
+/*
+|--------------------------------------------------------------------------
+| Check Out
+|--------------------------------------------------------------------------
+*/
+
+async function checkOut() {
+
+    const result = await sendAttendance(
+        "{{ route('staff.attendance.checkout') }}"
+    );
+
+    if (!result.success) {
+
+        resetButton("Check Out");
+
+        showMessage(result.message, "error");
+
+        return;
+
+    }
+
+    showMessage(result.message, "success");
+
+        attendanceBtn.disabled = true;
+
+        attendanceBtn.querySelector(".btn-text").innerHTML = "Refreshing...";
+
+        setTimeout(() => {
+
+            window.location.reload();
+
+        }, 1200);
+
+}
+</script>
 @endsection

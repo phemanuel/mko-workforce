@@ -14,12 +14,14 @@ class AttendanceController extends Controller
     public function index()
     {
         $attendances = Attendance::with([
-            'employee.user',
-            'shift',
-            'shift.supervisor'
-        ])
-        ->latest()
-        ->paginate(20);
+                'employee.user',
+                'employee.roleDetail',
+                'shift.supervisor',
+                'shift'
+            ])
+            ->latest('created_at')
+            ->get()
+            ->groupBy('employee_id');
 
         return view('admin.attendance.index', [
 
@@ -29,7 +31,10 @@ class AttendanceController extends Controller
 
             'checkedInCount' => Attendance::where('status','Checked In')->count(),
 
-            'completedCount' => Attendance::where('status','Completed')->count(),
+            'completedCount' => Attendance::whereIn('status',[
+                'Checked Out',
+                'Completed'
+            ])->count(),
 
             'lateCount' => Attendance::where('status','Late')->count(),
 
@@ -295,20 +300,20 @@ class AttendanceController extends Controller
         | Save Attendance
         |--------------------------------------------------------------------------
         */
+         $workedMinutes = $attendance->check_in_time
+            ->diffInMinutes($attendance->check_out_time);
 
         $attendance->update([
 
             'check_out_time' => $now,
-
             'check_out_lat' => $request->latitude,
-
             'check_out_lng' => $request->longitude,
-
             'early_leave_minutes' => $earlyLeaveMinutes,
-
             'status' => $status,
+            'worked_minutes' => $workedMinutes,
+            'worked_hours' => round($workedMinutes / 60, 2),
 
-        ]);
+        ]);        
 
         /*
         |--------------------------------------------------------------------------
@@ -324,7 +329,8 @@ class AttendanceController extends Controller
 
             ]);
 
-        }
+        }   
+        
 
         return response()->json([
 
@@ -389,6 +395,65 @@ class AttendanceController extends Controller
 
             $attendance->shift->supervisor_role = 'Administrator';
         }
+
+        return response()->json($attendance);
+    }
+
+    public function staffAttendance()
+    {
+        $employee = Auth::user()->employee;
+
+        abort_if(!$employee, 403);
+
+        $attendances = Attendance::with([
+                'shift.supervisor',
+                'shift'
+            ])
+            ->where('employee_id', $employee->id)
+            ->latest()
+            ->paginate(5);
+
+        $presentCount = Attendance::where('employee_id', $employee->id)
+            ->whereIn('status', ['Checked Out', 'Completed'])
+            ->count();
+
+        $lateCount = Attendance::where('employee_id', $employee->id)
+            ->where('status', 'Late')
+            ->count();
+
+        $workedHours = Attendance::where('employee_id', $employee->id)
+            ->whereNotNull('check_in_time')
+            ->whereNotNull('check_out_time')
+            ->get()
+            ->sum(function ($attendance) {
+                return $attendance->check_in_time
+                    ->diffInMinutes($attendance->check_out_time) / 60;
+            });
+
+        $attendanceRate = $attendances->total()
+            ? round(($presentCount / $attendances->total()) * 100)
+            : 0;
+
+        return view('staff.attendance.index', compact(
+            'attendances',
+            'presentCount',
+            'lateCount',
+            'workedHours',
+            'attendanceRate'
+        ));
+    }
+
+    public function staffAttendanceShow(Attendance $attendance)
+    {
+        abort_if(
+            $attendance->employee_id != Auth::user()->employee->id,
+            403
+        );
+
+        $attendance->load([
+            'shift.supervisor',
+            'shift'
+        ]);
 
         return response()->json($attendance);
     }

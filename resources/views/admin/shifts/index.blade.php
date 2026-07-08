@@ -255,8 +255,15 @@
                             </p>
 
                             <p class="font-medium">
-                                {{ $shift->start_time }} - {{ $shift->end_time }}
+                                {{ \Carbon\Carbon::parse($shift->start_time)->format('g:i A') }}
+                                -
+                                {{ \Carbon\Carbon::parse($shift->end_time)->format('g:i A') }}
                             </p>
+
+                            <span class="inline-flex items-center mt-1 px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
+                                <i class="fas fa-globe-africa mr-1"></i>
+                                {{ $shift->timezone }}
+                            </span>
                         </div>
 
                     </div>
@@ -2158,7 +2165,12 @@ window.openShiftDetails = async function(id)
             <div class="grid grid-cols-2 gap-3 text-sm">
 
                 <div>📅 <b>Date:</b> ${shift.shift_date}</div>
-                <div>⏰ <b>Time:</b> ${shift.start_time} - ${shift.end_time}</div>
+                <div>
+                    ⏰ <b>Time:</b> ${shift.start_time} - ${shift.end_time}
+                    <span class="ml-2 inline-flex items-center px-2 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-700">
+                        🌍 ${shift.timezone}
+                    </span>
+                </div>
                 <div>📍 <b>Location:</b> ${shift.location ?? 'N/A'}</div>
                 <div>👥 <b>Required:</b> ${shift.required_staff}</div>
 

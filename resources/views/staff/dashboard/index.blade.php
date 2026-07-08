@@ -211,7 +211,7 @@
 
                     <p class="text-xs text-gray-500">
 
-                        Start
+                        Shift Start
 
                     </p>
 
@@ -227,7 +227,7 @@
 
                     <p class="text-xs text-gray-500">
 
-                        End
+                        Shift End
 
                     </p>
 
@@ -288,19 +288,115 @@
 
                     @endphp
 
-                    <button
-                        id="attendanceBtn"
-                        data-action="{{ $attendanceAction }}"
-                        data-attendance="{{ $todayAttendance->id }}"
-                        class="px-5 py-3 rounded-xl text-white transition-all duration-300 {{ $buttonClass }}
-                            disabled:opacity-50 disabled:cursor-not-allowed"
-                        {{ $attendanceAction == 'completed' ? 'disabled' : '' }}>
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mt-6">
 
-                        <span class="btn-text">
-                            {{ $buttonText }}
-                        </span>
+                        <!-- Attendance Summary -->
 
-                    </button>
+                        <div class="grid grid-cols-3 gap-4 flex-1">
+
+                            <!-- Check In -->
+
+                            <div class="bg-gray-50 rounded-2xl p-4 border">
+
+                                <p class="text-xs uppercase tracking-wide text-gray-500">
+
+                                    Check In
+
+                                </p>
+
+                                <p class="mt-2 text-lg font-semibold text-slate-800">
+
+                                    {{ $todayAttendance->check_in_time
+                                        ? $todayAttendance->check_in_time->format('g:i A')
+                                        : '--' }}
+
+                                </p>
+
+                            </div>
+
+                            <!-- Check Out -->
+
+                            <div class="bg-gray-50 rounded-2xl p-4 border">
+
+                                <p class="text-xs uppercase tracking-wide text-gray-500">
+
+                                    Check Out
+
+                                </p>
+
+                                <p class="mt-2 text-lg font-semibold text-slate-800">
+
+                                    {{ $todayAttendance->check_out_time
+                                        ? $todayAttendance->check_out_time->format('g:i A')
+                                        : '--' }}
+
+                                </p>
+
+                            </div>
+
+                            <!-- Worked Hours -->
+
+                            <div class="bg-gray-50 rounded-2xl p-4 border">
+
+                                <p class="text-xs uppercase tracking-wide text-gray-500">
+
+                                    Worked
+
+                                </p>
+
+                                <p class="mt-2 text-lg font-semibold text-slate-800">
+
+                                    @if($todayAttendance->check_in_time)
+
+                                        @php
+
+                                            $end = $todayAttendance->check_out_time ?? now();
+
+                                            $minutes = $todayAttendance->check_in_time->diffInMinutes($end);
+
+                                            $hours = floor($minutes / 60);
+
+                                            $mins = $minutes % 60;
+
+                                        @endphp
+
+                                        {{ $hours }}h {{ $mins }}m
+
+                                    @else
+
+                                        --
+
+                                    @endif
+
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <!-- Attendance Button -->
+
+                        <div>
+
+                            <button
+                                id="attendanceBtn"
+                                data-action="{{ $attendanceAction }}"
+                                data-attendance="{{ $todayAttendance->id }}"
+                                class="px-6 py-4 rounded-2xl text-white font-semibold transition-all duration-300 {{ $buttonClass }}
+                                    disabled:opacity-50 disabled:cursor-not-allowed"
+                                {{ $attendanceAction == 'completed' ? 'disabled' : '' }}>
+
+                                <span class="btn-text">
+
+                                    {{ $buttonText }}
+
+                                </span>
+
+                            </button>
+
+                        </div>
+
+                    </div>
 
                     <div
                         id="attendanceMessage"
@@ -896,23 +992,15 @@ async function checkIn() {
 
     showMessage(result.message, "success");
 
-    attendanceBtn.dataset.action = "checkout";
+        attendanceBtn.disabled = true;
 
-    attendanceBtn.classList.remove(
-        "bg-green-600",
-        "hover:bg-green-700",
-        "bg-yellow-600",
-        "hover:bg-yellow-700"
-    );
+        attendanceBtn.querySelector(".btn-text").innerHTML = "Refreshing...";
 
-    attendanceBtn.classList.add(
-        "bg-red-600",
-        "hover:bg-red-700"
-    );
+        setTimeout(() => {
 
-    attendanceBtn.querySelector(".btn-text").innerHTML = "Check Out";
+            window.location.reload();
 
-    attendanceBtn.disabled = false;
+        }, 1200);
 
 }
 
@@ -940,21 +1028,15 @@ async function checkOut() {
 
     showMessage(result.message, "success");
 
-    attendanceBtn.dataset.action = "completed";
+        attendanceBtn.disabled = true;
 
-    attendanceBtn.classList.remove(
-        "bg-red-600",
-        "hover:bg-red-700"
-    );
+        attendanceBtn.querySelector(".btn-text").innerHTML = "Refreshing...";
 
-    attendanceBtn.classList.add(
-        "bg-gray-500"
-    );
+        setTimeout(() => {
 
-    attendanceBtn.querySelector(".btn-text").innerHTML =
-        "Shift Completed";
+            window.location.reload();
 
-    attendanceBtn.disabled = true;
+        }, 1200);
 
 }
 </script>

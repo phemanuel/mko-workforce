@@ -28,7 +28,10 @@ class Attendance extends Model
 
             'status',
 
-            'remarks'
+            'remarks',
+
+            'worked_hours',
+            'worked_minutes',
         ];
 
         protected $casts = [

@@ -60,4 +60,28 @@ class Shift extends Model
     {
         return $this->belongsTo(User::class, 'supervisor_id');
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Shift Lock
+    |--------------------------------------------------------------------------
+    */
+
+    public function isLocked(): bool
+    {
+        return $this->attendances()
+            ->where(function ($query) {
+
+                $query->whereNotNull('check_in_time')
+                    ->orWhereNotNull('check_out_time')
+                    ->orWhereIn('status', [
+                        'Checked In',
+                        'Checked Out',
+                        'Late',
+                        'Early Leave'
+                    ]);
+
+            })
+            ->exists();
+    }
 }

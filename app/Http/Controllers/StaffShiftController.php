@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\ShiftAssignment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Attendance;
+use App\Models\ShiftAssignment;
+use Carbon\Carbon;
 
 class StaffShiftController extends Controller
 {
@@ -13,85 +16,206 @@ class StaffShiftController extends Controller
     | MY SHIFTS
     |--------------------------------------------------------------------------
     */
-    public function index(Request $request)
+    public function index()
     {
-        $employee = auth()->user()->employee;
+        $user = Auth::user();
+
+        $employee = $user->employee;
+
+        abort_if(!$employee, 403, 'Employee profile not found.');
 
         /*
         |--------------------------------------------------------------------------
-        | FILTERS
+        | Today's Shift
         |--------------------------------------------------------------------------
         */
-        $status = $request->status;
-        $search = $request->search;
-
-        $query = ShiftAssignment::with('shift')
-            ->where('employee_id', $employee->id);
-
-        /*
-        |--------------------------------------------------------------------------
-        | STATUS FILTER
-        |--------------------------------------------------------------------------
-        */
-        if ($status && $status != 'All') {
-            $query->where('status', $status);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | SEARCH
-        |--------------------------------------------------------------------------
-        */
-        if ($search) {
-
-            $query->whereHas('shift', function ($q) use ($search) {
-
-                $q->where('title', 'like', "%{$search}%")
-                    ->orWhere('location', 'like', "%{$search}%")
-                    ->orWhere('shift_date', 'like', "%{$search}%");
-
-            });
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | RESULTS
-        |--------------------------------------------------------------------------
-        */
-        $assignments = $query
+        $todayShift = ShiftAssignment::with([
+                'shift.supervisor',
+                'shift',
+                'attendance'
+            ])
+            ->where('employee_id', $employee->id)
+            ->whereHas('shift', function ($query) {
+                $query->whereDate('shift_date', today());
+            })
             ->latest()
-            ->paginate(10)
-            ->withQueryString();
+            ->first();
 
         /*
         |--------------------------------------------------------------------------
-        | STATS
+        | Today's Attendance
         |--------------------------------------------------------------------------
         */
-        $assignedCount = ShiftAssignment::where('employee_id', $employee->id)
-            ->where('status', 'Assigned')
+
+        $todayAttendance = optional($todayShift)->attendance;
+
+        $todayStatus = 'Off Duty';
+        $attendanceAction = null;
+
+        if ($todayAttendance) {
+
+            // Employee has not checked in yet
+            if (
+                is_null($todayAttendance->check_in_time) &&
+                is_null($todayAttendance->check_out_time)
+            ) {
+
+                $attendanceAction = 'checkin';
+
+                $todayStatus = match ($todayAttendance->status) {
+
+                    'Late'    => 'Late Check In',
+                    'Absent'  => 'Absent',
+                    default   => 'Ready to Check In',
+
+                };
+
+            }
+
+            // Employee has checked in but not checked out
+            elseif (
+                !is_null($todayAttendance->check_in_time) &&
+                is_null($todayAttendance->check_out_time)
+            ) {
+
+                $attendanceAction = 'checkout';
+
+                $todayStatus = 'Currently Working';
+
+            }
+
+            // Employee has completed the shift
+            elseif (
+                !is_null($todayAttendance->check_in_time) &&
+                !is_null($todayAttendance->check_out_time)
+            ) {
+
+                $attendanceAction = 'completed';
+
+                $todayStatus = match ($todayAttendance->status) {
+
+                    'Early Leave' => 'Left Early',
+                    default       => 'Shift Completed',
+
+                };
+
+            }
+
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Next Upcoming Shift
+        |--------------------------------------------------------------------------
+        */
+        $nextShift = ShiftAssignment::with([
+                'shift.supervisor',
+                'shift'
+            ])
+            ->where('employee_id', $employee->id)
+            ->whereHas('shift', function ($query) {
+                $query->whereDate('shift_date', '>', today());
+            })
+            ->join('shifts', 'shift_assignments.shift_id', '=', 'shifts.id')
+            ->orderBy('shifts.shift_date')
+            ->select('shift_assignments.*')
+            ->first();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Dashboard Statistics
+        |--------------------------------------------------------------------------
+        */
+        $assignedShifts = ShiftAssignment::where('employee_id', $employee->id)
+            ->whereIn('status', ['Assigned', 'Accepted'])
             ->count();
 
-        $acceptedCount = ShiftAssignment::where('employee_id', $employee->id)
-            ->where('status', 'Accepted')
-            ->count();
-
-        $declinedCount = ShiftAssignment::where('employee_id', $employee->id)
-            ->where('status', 'Declined')
-            ->count();
-
-        $completedCount = ShiftAssignment::where('employee_id', $employee->id)
+        $completedShifts = ShiftAssignment::where('employee_id', $employee->id)
             ->where('status', 'Completed')
             ->count();
 
+        $pendingShifts = ShiftAssignment::where('employee_id', $employee->id)
+            ->where('status', 'Pending')
+            ->count();
+
+        $upcomingShifts = ShiftAssignment::where('employee_id', $employee->id)
+        ->whereHas('shift', function ($q) {
+            $q->whereDate('shift_date', '>=', today());
+        })
+        ->whereIn('status', ['Assigned', 'Accepted'])
+        ->count();
+
+        $todayShifts = ShiftAssignment::where('employee_id', $employee->id)
+        ->whereHas('shift', function ($q) {
+            $q->whereDate('shift_date', '=', today());
+        })
+        ->whereIn('status', ['Assigned', 'Accepted'])
+        ->count();
+
+        $totalAttendance = Attendance::where('employee_id', $employee->id)->count();
+
+        $completedAttendance = Attendance::where('employee_id', $employee->id)
+            ->where('status', 'Checked Out')
+            ->count();
+
+        $attendanceRate = $totalAttendance
+            ? round(($completedAttendance / $totalAttendance) * 100)
+            : 0;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Total Worked Hours
+        |--------------------------------------------------------------------------
+        */
+        $workedHours = Attendance::where('employee_id', $employee->id)
+            ->whereNotNull('check_in_time')
+            ->whereNotNull('check_out_time')
+            ->get()
+            ->sum(function ($attendance) {
+                return Carbon::parse($attendance->check_in_time)
+                    ->diffInMinutes($attendance->check_out_time) / 60;
+            });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Recent Attendance
+        |--------------------------------------------------------------------------
+        */
+        $recentAttendance = Attendance::with('shift')
+            ->where('employee_id', $employee->id)
+            ->latest()
+            ->take(5)
+            ->get();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Recent Shifts
+        |--------------------------------------------------------------------------
+        */
+        $recentShifts = ShiftAssignment::with([
+                'shift.supervisor',
+                'shift'
+            ])
+            ->where('employee_id', $employee->id)
+            ->latest()
+            ->paginate(5);
+
         return view('staff.shifts.index', compact(
-            'assignments',
-            'assignedCount',
-            'acceptedCount',
-            'declinedCount',
-            'completedCount',
-            'status',
-            'search'
+            'employee',
+            'todayShift',
+            'todayAttendance',
+            'todayStatus',
+            'attendanceAction',
+            'nextShift',
+            'assignedShifts',
+            'completedShifts',
+            'upcomingShifts',
+            'todayShifts',
+            'workedHours',
+            'recentAttendance',
+            'recentShifts',
+            'pendingShifts',
+            'attendanceRate'
         ));
     }
 

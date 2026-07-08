@@ -183,6 +183,12 @@ use App\Http\Controllers\StaffShiftController;
 
         Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut'])
             ->name('attendance.checkout');
+
+        Route::get('/attendance', [AttendanceController::class, 'staffAttendance'])
+            ->name('attendance.index');
+
+        Route::get('/attendance/{attendance}', [AttendanceController::class, 'StaffAttendanceShow'])
+            ->name('attendance.show');
         
 
     });

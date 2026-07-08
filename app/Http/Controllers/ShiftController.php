@@ -178,50 +178,135 @@ class ShiftController extends Controller
     {
         $shift = Shift::findOrFail($id);
 
+        /*
+        |--------------------------------------------------------------------------
+        | Prevent Updating Locked Shift
+        |--------------------------------------------------------------------------
+        */
+
+        if ($shift->isLocked()) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'This shift is locked because attendance has already started. It can no longer be edited.'
+            ], 422);
+
+        }
+
         $validated = $request->validate([
+
             'title' => 'required|string',
+
             'shift_date' => 'required|date',
+
             'start_time' => 'required',
+
             'end_time' => 'required',
+
             'timezone' => 'required',
-            'check_in_open_minutes' => 'required',
-            'late_after_minutes' => 'required',
+
+            'check_in_open_minutes' => 'required|integer|min:0',
+
+            'late_after_minutes' => 'required|integer|min:0',
+
             'location' => 'nullable|string',
-            'required_staff' => 'nullable|integer',
-            'hourly_rate' => 'nullable|numeric',
+
+            'required_staff' => 'nullable|integer|min:1',
+
+            'hourly_rate' => 'nullable|numeric|min:0',
+
             'status' => 'required|string',
+
             'instructions' => 'nullable|string',
+
             'notes' => 'nullable|string',
+
         ]);
 
         $shift->update($validated);
 
         return response()->json([
+
             'success' => true,
-            'message' => 'Shift updated successfully',
+
+            'message' => 'Shift updated successfully.',
+
             'shift' => $shift
+
         ]);
     }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    
+    public function destroy($id)
     {
-        //
+        $shift = Shift::findOrFail($id);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Prevent Deleting Locked Shift
+        |--------------------------------------------------------------------------
+        */
+
+        if ($shift->isLocked()) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'This shift is locked because attendance has already started. It cannot be deleted.'
+            ], 422);
+
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Prevent Deleting Shift With Assignments
+        |--------------------------------------------------------------------------
+        */
+
+        if ($shift->assignments()->exists()) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Remove all assigned staff before deleting this shift.'
+            ], 422);
+
+        }
+
+        $shift->delete();
+
+        return response()->json([
+
+            'success' => true,
+
+            'message' => 'Shift deleted successfully.'
+
+        ]);
     }
+    
 
     public function complete($id)
     {
         $shift = Shift::findOrFail($id);
+
+        if ($shift->status == 'Completed') {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Shift has already been completed.'
+            ], 422);
+
+        }
 
         $shift->update([
             'status' => 'Completed'
         ]);
 
         return response()->json([
+
             'success' => true,
+
+            'message' => 'Shift marked as completed.',
+
             'shift' => $shift
+
         ]);
     }
 
@@ -279,9 +364,40 @@ class ShiftController extends Controller
 
         /*
         |--------------------------------------------------------------------------
+        | LOCKED SHIFT
+        |--------------------------------------------------------------------------
+        */
+
+        if ($shift->isLocked()) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'This shift has already started. No additional staff can be assigned.'
+            ], 422);
+
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | COMPLETED / CANCELLED SHIFT
+        |--------------------------------------------------------------------------
+        */
+
+        if (in_array($shift->status, ['Completed', 'Cancelled'])) {
+
+            return response()->json([
+                'success' => false,
+                'message' => "Cannot assign staff to a {$shift->status} shift."
+            ], 422);
+
+        }
+
+        /*
+        |--------------------------------------------------------------------------
         | CURRENT ACTIVE ASSIGNMENTS
         |--------------------------------------------------------------------------
         */
+
         $currentCount = ShiftAssignment::where('shift_id', $id)
             ->where('status', 'Assigned')
             ->count();
@@ -293,58 +409,66 @@ class ShiftController extends Controller
         | LIMIT CHECK
         |--------------------------------------------------------------------------
         */
+
         if (($currentCount + $incoming) > $shift->required_staff) {
 
             return response()->json([
                 'success' => false,
                 'message' => 'Shift staffing limit exceeded.'
             ], 422);
+
         }
 
         /*
         |--------------------------------------------------------------------------
-        | ASSIGN STAFF + CREATE ATTENDANCE
+        | ASSIGN STAFF
         |--------------------------------------------------------------------------
         */
+
         foreach ($request->employees as $employeeId) {
 
-            $assignment = ShiftAssignment::firstOrCreate(
-                [
-                    'shift_id'    => $id,
-                    'employee_id' => $employeeId,
-                ],
-                [
-                    'status' => 'Assigned'
-                ]
-            );
-
             /*
             |--------------------------------------------------------------------------
-            | REACTIVATE IF PREVIOUSLY CHANGED
+            | Prevent Duplicate Assignment
             |--------------------------------------------------------------------------
             */
-            if ($assignment->status !== 'Assigned') {
 
-                $assignment->update([
-                    'status' => 'Assigned'
-                ]);
+            if (
+                ShiftAssignment::where('shift_id', $id)
+                    ->where('employee_id', $employeeId)
+                    ->exists()
+            ) {
+                continue;
             }
 
+            $assignment = ShiftAssignment::create([
+
+                'shift_id'    => $id,
+
+                'employee_id' => $employeeId,
+
+                'status'      => 'Assigned'
+
+            ]);
+
             /*
             |--------------------------------------------------------------------------
-            | CREATE ATTENDANCE RECORD
+            | Attendance Record
             |--------------------------------------------------------------------------
             */
-            Attendance::firstOrCreate(
-                [
-                    'shift_assignment_id' => $assignment->id,
-                ],
-                [
-                    'shift_id'    => $shift->id,
-                    'employee_id' => $employeeId,
-                    'status'      => 'Pending',
-                ]
-            );
+
+            Attendance::create([
+
+                'shift_assignment_id' => $assignment->id,
+
+                'shift_id'    => $shift->id,
+
+                'employee_id' => $employeeId,
+
+                'status'      => 'Pending'
+
+            ]);
+
         }
 
         /*
@@ -352,58 +476,103 @@ class ShiftController extends Controller
         | UPDATE SHIFT STATUS
         |--------------------------------------------------------------------------
         */
+
         $activeAssignments = ShiftAssignment::where('shift_id', $id)
             ->where('status', 'Assigned')
             ->count();
 
         $shift->update([
-            'status' => $activeAssignments > 0 ? 'Assigned' : 'Open'
+
+            'status' => $activeAssignments > 0
+                ? 'Assigned'
+                : 'Open'
+
         ]);
 
         /*
         |--------------------------------------------------------------------------
-        | ACTIVITY LOG
+        | Activity Log
         |--------------------------------------------------------------------------
         */
+
         log_activity(
+
             'shift_assignment',
+
             'Shift Assignment',
+
             "{$incoming} staff assigned to {$shift->title}"
+
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | RESPONSE
-        |--------------------------------------------------------------------------
-        */
         return response()->json([
+
             'success' => true,
+
             'message' => 'Staff assigned successfully.',
+
             'active_assignments' => $activeAssignments,
+
             'shift_status' => $shift->status
+
         ]);
     }
 
     public function unassign($assignmentId)
     {
+        $activeAssignments = 0;
+
         DB::transaction(function () use ($assignmentId, &$activeAssignments) {
 
-            $assignment = ShiftAssignment::findOrFail($assignmentId);
+            $assignment = ShiftAssignment::with('shift')->findOrFail($assignmentId);
 
-            $shiftId = $assignment->shift_id;
+            $shift = $assignment->shift;
 
             /*
             |--------------------------------------------------------------------------
-            | DELETE ATTENDANCE RECORD
+            | LOCKED SHIFT
             |--------------------------------------------------------------------------
             */
-            Attendance::where('shift_assignment_id', $assignment->id)->delete();
+
+            if ($shift->isLocked()) {
+
+                throw new \Exception(
+                    'This shift has already started. Staff can no longer be removed.'
+                );
+
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | COMPLETED / CANCELLED SHIFT
+            |--------------------------------------------------------------------------
+            */
+
+            if (in_array($shift->status, ['Completed', 'Cancelled'])) {
+
+                throw new \Exception(
+                    "Cannot modify a {$shift->status} shift."
+                );
+
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | DELETE ATTENDANCE
+            |--------------------------------------------------------------------------
+            */
+
+            Attendance::where(
+                'shift_assignment_id',
+                $assignment->id
+            )->delete();
 
             /*
             |--------------------------------------------------------------------------
             | DELETE ASSIGNMENT
             |--------------------------------------------------------------------------
             */
+
             $assignment->delete();
 
             /*
@@ -411,14 +580,20 @@ class ShiftController extends Controller
             | UPDATE SHIFT STATUS
             |--------------------------------------------------------------------------
             */
-            $activeAssignments = ShiftAssignment::where('shift_id', $shiftId)
-                ->where('status', 'Assigned')
-                ->count();
 
-            $shift = Shift::findOrFail($shiftId);
+            $activeAssignments = ShiftAssignment::where(
+                'shift_id',
+                $shift->id
+            )
+            ->where('status', 'Assigned')
+            ->count();
 
             $shift->update([
-                'status' => $activeAssignments > 0 ? 'Assigned' : 'Open'
+
+                'status' => $activeAssignments > 0
+                    ? 'Assigned'
+                    : 'Open'
+
             ]);
 
             /*
@@ -426,87 +601,31 @@ class ShiftController extends Controller
             | ACTIVITY LOG
             |--------------------------------------------------------------------------
             */
+
             log_activity(
+
                 'shift_unassigned',
+
                 'Shift Unassignment',
-                'A staff member was removed from shift "' . $shift->title . '"'
+
+                'A staff member was removed from shift "' .
+                $shift->title .
+                '"'
+
             );
+
         });
 
         return response()->json([
+
             'success' => true,
+
             'message' => 'Staff unassigned successfully.',
+
             'remaining_assigned' => $activeAssignments
+
         ]);
     }
     
-    public function adminCheckIn(Request $request, $shiftId, $userId)
-    {
-        $shift = Shift::findOrFail($shiftId);
-
-        $attendance = Attendance::firstOrCreate([
-            'shift_id' => $shiftId,
-            'user_id' => $userId,
-        ]);
-
-        $attendance->update([
-            'check_in_time' => now(),
-
-            // MOCK GPS
-            'check_in_lat' => $request->lat ?? 0,
-            'check_in_lng' => $request->lng ?? 0,
-        ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | LATE LOGIC
-        |--------------------------------------------------------------------------
-        */
-        $shiftStart = strtotime($shift->shift_date . ' ' . $shift->start_time);
-
-        if (now()->timestamp > $shiftStart) {
-            $attendance->status = 'late';
-        } else {
-            $attendance->status = 'present';
-        }
-
-        $attendance->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Staff checked in successfully (admin)'
-        ]);
-    }
-
-    public function adminCheckOut(Request $request, $shiftId, $userId)
-    {
-        $attendance = Attendance::where('shift_id', $shiftId)
-            ->where('user_id', $userId)
-            ->firstOrFail();
-
-        $attendance->update([
-            'check_out_time' => now(),
-
-            // MOCK GPS
-            'check_out_lat' => $request->lat ?? 0,
-            'check_out_lng' => $request->lng ?? 0,
-        ]);
-
-        $shift = Shift::findOrFail($shiftId);
-
-        $shiftEnd = strtotime($shift->shift_date . ' ' . $shift->end_time);
-
-        if (now()->timestamp < $shiftEnd) {
-            $attendance->status = 'early_leave';
-        } else {
-            $attendance->status = 'completed';
-        }
-
-        $attendance->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Staff checked out successfully (admin)'
-        ]);
-    }
+    
 }

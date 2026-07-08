@@ -293,146 +293,144 @@
             id="attendanceGrid"
             class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 p-6">
 
-            @forelse($attendances as $attendance)
+            @forelse($attendances as $employeeAttendances)
 
-                @php
+    @php
 
-                    $badge = match($attendance->status){
+        $employee = $employeeAttendances->first()->employee;
 
-                        'Pending'=>'bg-blue-100 text-blue-700',
+        $totalShifts = $employeeAttendances->count();
 
-                        'Checked In'=>'bg-green-100 text-green-700',
+        $completed = $employeeAttendances
+                        ->whereIn('status',['Checked Out','Completed'])
+                        ->count();
 
-                        'Completed'=>'bg-purple-100 text-purple-700',
+        $checkedIn = $employeeAttendances
+                        ->where('status','Checked In')
+                        ->count();
 
-                        'Late'=>'bg-red-100 text-red-700',
+        $late = $employeeAttendances
+                    ->where('status','Late')
+                    ->count();
 
-                        default=>'bg-gray-100 text-gray-700'
+    @endphp
 
-                    };
+    <div class="bg-white rounded-3xl border shadow-sm overflow-hidden">
 
-                @endphp
+        <!-- Employee Header -->
 
-                <div
+        <button
+            type="button"
+            class="w-full p-6 flex justify-between items-center hover:bg-gray-50 attendance-toggle">
 
-                    class="attendance-card rounded-3xl border bg-white shadow-sm hover:shadow-xl transition"
+            <div class="text-left">
 
-                    data-status="{{ $attendance->status }}">
+                <h3 class="text-lg font-bold text-slate-800">
 
-                    <div class="p-5">
+                    {{ $employee->user->name }}
 
-                        <div class="flex justify-between">
+                </h3>
 
-                            <div>
+                <div class="flex gap-5 mt-2 text-sm text-gray-500">
 
-                                <h3 class="font-bold text-lg">
+                    <span>{{ $totalShifts }} Shift(s)</span>
 
-                                    {{ $attendance->employee->user->name }}
+                    <span class="text-green-600">
+                        {{ $completed }} Completed
+                    </span>
 
-                                </h3>
+                    <span class="text-blue-600">
+                        {{ $checkedIn }} Working
+                    </span>
 
-                                <p class="text-sm text-gray-500">
+                    <span class="text-red-600">
+                        {{ $late }} Late
+                    </span>
 
-                                    {{ $attendance->shift->title }}
+                </div>
 
-                                </p>
+            </div>
+
+            <i class="fas fa-chevron-down transition-transform duration-300"></i>
+
+        </button>
+
+        <!-- Employee Shifts -->
+
+        <div class="attendance-content hidden border-t">
+
+            @foreach($employeeAttendances as $attendance)
+
+                            @php
+
+                                $badge = match($attendance->status){
+
+                                    'Pending' => 'bg-blue-100 text-blue-700',
+
+                                    'Checked In' => 'bg-green-100 text-green-700',
+
+                                    'Checked Out' => 'bg-purple-100 text-purple-700',
+
+                                    'Completed' => 'bg-purple-100 text-purple-700',
+
+                                    'Late' => 'bg-red-100 text-red-700',
+
+                                    'Absent' => 'bg-gray-200 text-gray-700',
+
+                                    default => 'bg-gray-100 text-gray-700'
+
+                                };
+
+                            @endphp
+
+                            <div
+                                class="flex items-center justify-between p-5 hover:bg-slate-50 border-b">
+
+                                <div>
+
+                                    <h4 class="font-semibold">
+
+                                        {{ $attendance->shift->title }}
+
+                                    </h4>
+
+                                    <p class="text-sm text-gray-500 mt-1">
+
+                                        {{ \Carbon\Carbon::parse($attendance->shift->shift_date)->format('D, d M Y') }}
+
+                                        •
+
+                                        {{ \Carbon\Carbon::parse($attendance->shift->start_time)->format('g:i A') }}
+
+                                        -
+
+                                        {{ \Carbon\Carbon::parse($attendance->shift->end_time)->format('g:i A') }}
+
+                                    </p>
+
+                                </div>
+
+                                <div class="flex items-center gap-4">
+
+                                    <span class="px-3 py-1 rounded-full text-xs font-semibold {{ $badge }}">
+
+                                        {{ $attendance->status }}
+
+                                    </span>
+
+                                    <button
+                                        onclick="openAttendanceInspector({{ $attendance->id }})"
+                                        class="px-4 py-2 rounded-xl border hover:bg-slate-100">
+
+                                        View
+
+                                    </button>
+
+                                </div>
 
                             </div>
 
-                            <span class="px-3 py-1 rounded-full text-xs font-semibold {{ $badge }}">
-
-                                {{ $attendance->status }}
-
-                            </span>
-
-                        </div>
-
-
-                        <div class="mt-5 space-y-3">
-
-                            <div class="flex justify-between">
-
-                                <span class="text-gray-500">
-
-                                    📅 Date
-
-                                </span>
-
-                                <strong>
-
-                                    {{ $attendance->shift->shift_date }}
-
-                                </strong>
-
-                            </div>
-
-
-                            <div class="flex justify-between">
-
-                                <span class="text-gray-500">
-
-                                    ⏰ Shift
-
-                                </span>
-
-                                <strong>
-
-                                    {{ $attendance->shift->start_time }}
-
-                                    -
-
-                                    {{ $attendance->shift->end_time }}
-
-                                </strong>
-
-                            </div>
-
-
-                            <div class="flex justify-between">
-
-                                <span class="text-gray-500">
-
-                                    ✔ Check In
-
-                                </span>
-
-                                <strong>
-
-                                    {{ $attendance->check_in_time ?? '--' }}
-
-                                </strong>
-
-                            </div>
-
-
-                            <div class="flex justify-between">
-
-                                <span class="text-gray-500">
-
-                                    ✖ Check Out
-
-                                </span>
-
-                                <strong>
-
-                                    {{ $attendance->check_out_time ?? '--' }}
-
-                                </strong>
-
-                            </div>
-
-                        </div>
-
-
-                        <button
-
-                            onclick="openAttendanceInspector({{ $attendance->id }})"
-
-                            class="w-full mt-6 border rounded-xl py-3 font-semibold text-slate-700 hover:bg-slate-100">
-
-                            View Details →
-
-                        </button>
+                        @endforeach
 
                     </div>
 
@@ -443,7 +441,9 @@
                 <div class="col-span-full py-20 text-center">
 
                     <div class="text-6xl">
+
                         📋
+
                     </div>
 
                     <h3 class="text-xl font-bold mt-4">
@@ -792,6 +792,23 @@ document
             }
 
         });
+
+    });
+
+});
+</script>
+<script>
+document.querySelectorAll('.attendance-toggle').forEach(button => {
+
+    button.addEventListener('click', function () {
+
+        const content = this.nextElementSibling;
+
+        const icon = this.querySelector('i');
+
+        content.classList.toggle('hidden');
+
+        icon.classList.toggle('rotate-180');
 
     });
 
