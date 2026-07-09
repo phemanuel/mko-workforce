@@ -539,6 +539,37 @@ function closeAttendanceInspector()
 function populateAttendanceInspector(att)
 {
 
+    function format12Hour(time) {
+        if (!time) return '--';
+
+        const [hours, minutes] = time.split(':');
+        const date = new Date();
+        date.setHours(hours, minutes);
+
+        return date.toLocaleTimeString([], {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+    }
+
+    function formatDateTime12Hour(dateTime) {
+    if (!dateTime) return '--';
+
+    const date = new Date(dateTime.replace(' ', 'T'));
+
+        return date.toLocaleString([], {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        });
+    }
+    
+
     document.getElementById('inspectorEmployee').textContent =
         att.employee?.user?.name ?? 'Unknown Employee';
 
@@ -552,26 +583,58 @@ function populateAttendanceInspector(att)
         att.shift?.shift_date ?? '-';
 
     document.getElementById('inspectorTime').textContent =
-        `${att.shift?.start_time ?? '--'} - ${att.shift?.end_time ?? '--'}`;
+    `${format12Hour(att.shift?.start_time)} - ${format12Hour(att.shift?.end_time)}`;
 
     document.getElementById('inspectorCheckIn').textContent =
-        att.check_in_time ?? 'Not Checked In';
+    att.check_in_time
+        ? formatDateTime12Hour(att.check_in_time)
+        : 'Not Checked In';
 
     document.getElementById('inspectorCheckOut').textContent =
-        att.check_out_time ?? 'Not Checked Out';
+        att.check_out_time
+            ? formatDateTime12Hour(att.check_out_time)
+            : 'Not Checked Out';
 
     document.getElementById('inspectorHours').textContent =
         att.worked_hours ?? '--';
 
-    document.getElementById('checkInLocation').textContent =
-        (att.check_in_lat && att.check_in_lng)
-            ? `${att.check_in_lat}, ${att.check_in_lng}`
-            : '--';
+    const checkInLocation = document.getElementById('checkInLocation');
 
-    document.getElementById('checkOutLocation').textContent =
-        (att.check_out_lat && att.check_out_lng)
-            ? `${att.check_out_lat}, ${att.check_out_lng}`
-            : '--';
+    if (att.check_in_lat && att.check_in_lng) {
+        checkInLocation.innerHTML = `
+            <div class="space-y-1">
+                <div class="text-slate-700 font-medium">
+                    ${att.check_in_lat}, ${att.check_in_lng}
+                </div>
+                <a href="https://www.google.com/maps?q=${att.check_in_lat},${att.check_in_lng}"
+                target="_blank"
+                class="text-indigo-600 hover:text-indigo-700 text-sm font-medium">
+                    📍 View on Google Maps
+                </a>
+            </div>
+        `;
+    } else {
+        checkInLocation.textContent = '--';
+    }
+
+    const checkOutLocation = document.getElementById('checkOutLocation');
+
+    if (att.check_out_lat && att.check_out_lng) {
+        checkOutLocation.innerHTML = `
+            <div class="space-y-1">
+                <div class="text-slate-700 font-medium">
+                    ${att.check_out_lat}, ${att.check_out_lng}
+                </div>
+                <a href="https://www.google.com/maps?q=${att.check_out_lat},${att.check_out_lng}"
+                target="_blank"
+                class="text-indigo-600 hover:text-indigo-700 text-sm font-medium">
+                    📍 View on Google Maps
+                </a>
+            </div>
+        `;
+    } else {
+        checkOutLocation.textContent = '--';
+    }
 
     document.getElementById('supervisorName').textContent =
     `${att.shift.supervisor_name} (${att.shift.supervisor_role})`;
@@ -604,8 +667,12 @@ function populateAttendanceInspector(att)
             badge.classList.add('bg-blue-600');
             break;
 
-        case 'Completed':
+        case 'Checked Out':
             badge.classList.add('bg-green-600');
+            break;
+
+        case 'Early Leave':
+            badge.classList.add('bg-yellow-500');
             break;
 
         case 'Late':
@@ -621,7 +688,45 @@ function populateAttendanceInspector(att)
 
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | ATTENDANCE ACTIONS
+    |--------------------------------------------------------------------------
+    */
 
+    const actionsCard = document.getElementById('attendanceActionsCard');
+    const resolveBtn = document.getElementById('btnResolveAttendance');
+    const actionMessage = document.getElementById('attendanceActionMessage');
+
+    // Hide everything first
+    actionsCard.classList.add('hidden');
+    resolveBtn.classList.add('hidden');
+    actionMessage.classList.add('hidden');
+
+    // Employee checked in but has not checked out
+    if (att.check_in_time && !att.check_out_time) {
+
+        actionsCard.classList.remove('hidden');
+
+        resolveBtn.classList.remove('hidden');
+
+        actionMessage.classList.remove('hidden');
+
+        actionMessage.innerHTML = `
+            <div class="flex items-start gap-3">
+                <div class="text-xl">⚠️</div>
+                <div>
+                    <div class="font-semibold">
+                        Attendance Requires Resolution
+                    </div>
+                    <div class="text-sm mt-1">
+                        This employee checked in but has not checked out.
+                        Resolve the attendance before payroll is generated.
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 
     /*
     |--------------------------------------------------------------------------
@@ -668,7 +773,7 @@ function populateAttendanceInspector(att)
                     Attendance Record Created
                 </div>
                 <div class="text-sm text-gray-500">
-                    ${att.created_at}
+                   ${formatDateTime12Hour(att.created_at)}
                 </div>
             </div>
         </div>
@@ -684,7 +789,7 @@ function populateAttendanceInspector(att)
                     Checked In
                 </div>
                 <div class="text-sm text-gray-500">
-                    ${att.check_in_time}
+                    ${formatDateTime12Hour(att.check_in_time)}
                 </div>
             </div>
         </div>

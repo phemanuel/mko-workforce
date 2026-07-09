@@ -144,17 +144,20 @@ use App\Http\Controllers\StaffShiftController;
         // ->only(['index','show']);
 
         Route::post(
-            'attendance/{assignment}/check-in',
+            '/attendance/{assignment}/check-in',
             [AttendanceController::class,'checkIn']
         )->name('attendance.checkin');
 
         Route::post(
-            'attendance/{assignment}/check-out',
+            '/attendance/{assignment}/check-out',
             [AttendanceController::class,'checkOut']
         )->name('attendance.checkout');
 
         Route::get('/attendance/{attendance}', [AttendanceController::class, 'show'])
          ->name('attendance.show');
+
+        Route::post('/attendance/{attendance}/adjust', [AttendanceController::class, 'adjustAttendance'])
+            ->name('adjust');
 
     });
 
@@ -188,7 +191,7 @@ use App\Http\Controllers\StaffShiftController;
             ->name('attendance.index');
 
         Route::get('/attendance/{attendance}', [AttendanceController::class, 'StaffAttendanceShow'])
-            ->name('attendance.show');
+            ->name('attendance.show');       
         
 
     });

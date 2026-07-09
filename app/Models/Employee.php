@@ -81,5 +81,10 @@ class Employee extends Model
     {
         return $this->hasMany(Shift::class, 'supervisor_id');
     }
+
+    public function payrolls()
+    {
+        return $this->hasMany(Payroll::class);
+    }
     
 }

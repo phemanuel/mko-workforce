@@ -32,12 +32,23 @@ class Attendance extends Model
 
             'worked_hours',
             'worked_minutes',
+
+            'resolved_by',
+            'resolved_at',
+            'resolution_method',
+            'resolution_reason',
         ];
 
         protected $casts = [
             'check_in_time'=>'datetime',
+            'resolved_at' => 'datetime',
             'check_out_time'=>'datetime'
         ];
+
+        public function resolvedBy()
+        {
+            return $this->belongsTo(User::class, 'resolved_by');
+        }
         
         public function shift()
         {
@@ -58,4 +69,9 @@ class Attendance extends Model
         {
             return $this->belongsTo(ShiftAssignment::class,'shift_assignment_id');
         }
+
+        public function payrollItem()
+    {
+        return $this->hasOne(PayrollItem::class);
     }
+}

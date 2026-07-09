@@ -325,25 +325,21 @@
 
                                 <p class="mt-2 text-lg font-semibold text-slate-800">
 
-                                    @if($todayAttendance->check_in_time)
+                                    @if(!$todayAttendance->check_in_time)
 
-                                        @php
+                                        --
 
-                                            $end = $todayAttendance->check_out_time ?? now();
+                                    @elseif($todayAttendance->check_in_time && !$todayAttendance->check_out_time)
 
-                                            $minutes = $todayAttendance->check_in_time->diffInMinutes($end);
+                                        <span class="text-blue-600">
 
-                                            $hours = floor($minutes / 60);
+                                            Currently Working
 
-                                            $mins = $minutes % 60;
-
-                                        @endphp
-
-                                        {{ $hours }}h {{ $mins }}m
+                                        </span>
 
                                     @else
 
-                                        --
+                                         {{ number_format($todayAttendance->worked_hours, 2) }} hrs
 
                                     @endif
 

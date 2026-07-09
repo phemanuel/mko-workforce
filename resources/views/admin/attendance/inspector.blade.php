@@ -293,7 +293,43 @@
 
         </div>
 
+        <!-- ATTENDANCE ACTIONS -->
 
+        <div id="attendanceActionsCard" class="bg-white border rounded-2xl p-5 hidden">
+
+            <div class="flex items-center justify-between mb-5">
+
+                <div>
+                    <h3 class="font-bold text-lg">
+                        Attendance Actions
+                    </h3>
+
+                    <p class="text-sm text-gray-500">
+                        Resolve attendance issues and manage this shift.
+                    </p>
+                </div>
+
+            </div>
+
+            <div id="attendanceActionMessage"
+                class="mb-5 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 hidden">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+                <button
+                    id="btnResolveAttendance"
+                    class="hidden w-full px-4 py-3 rounded-xl
+                        bg-amber-600 hover:bg-amber-700
+                        text-white font-semibold transition">
+
+                    Adjust Attendance
+
+                </button>
+
+            </div>
+
+        </div>
 
         <!-- SUPERVISOR -->
 

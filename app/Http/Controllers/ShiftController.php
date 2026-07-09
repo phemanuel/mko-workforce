@@ -225,6 +225,12 @@ class ShiftController extends Controller
 
         $shift->update($validated);
 
+        log_activity(
+                'shift_created',
+                'Shift created',
+                $shift->title . ' updated by ' . auth()->user()->name
+            );
+
         return response()->json([
 
             'success' => true,
