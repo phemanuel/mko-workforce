@@ -156,8 +156,8 @@ use App\Http\Controllers\StaffShiftController;
         Route::get('/attendance/{attendance}', [AttendanceController::class, 'show'])
          ->name('attendance.show');
 
-        Route::post('/attendance/{attendance}/adjust', [AttendanceController::class, 'adjustAttendance'])
-            ->name('adjust');
+        Route::post('/attendance/{attendance}/adjust',[AttendanceController::class,'adjustAttendance'])
+        ->name('admin.attendance.adjust');
 
     });
 

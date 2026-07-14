@@ -8,6 +8,7 @@ use App\Models\Shift;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class AttendanceController extends Controller
 {
@@ -456,6 +457,292 @@ class AttendanceController extends Controller
         ]);
 
         return response()->json($attendance);
+    }
+
+    public function adjustAttendance(Request $request, Attendance $attendance)
+    {
+        $request->validate([
+            'check_in_time'  => ['required', 'date'],
+            'check_out_time' => ['nullable', 'date', 'after:check_in_time'],
+            'reason'         => ['required', 'string', 'max:1000'],
+            'check_out_lat' => ['nullable','numeric'],
+            'check_out_lng' => ['nullable','numeric'],
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+
+            /*
+            |--------------------------------------------------------------------------
+            | Keep Original Values for Activity Log
+            |--------------------------------------------------------------------------
+            */
+
+            $originalCheckIn  = $attendance->check_in_time;
+            $originalCheckOut = $attendance->check_out_time;
+            $originalStatus   = $attendance->status;
+
+            /*
+            |--------------------------------------------------------------------------
+            | Convert Request Values
+            |--------------------------------------------------------------------------
+            */
+
+            $checkIn = Carbon::parse($request->check_in_time);
+
+            $checkOut = $request->filled('check_out_time')
+                ? Carbon::parse($request->check_out_time)
+                : null;
+
+            /*
+            |--------------------------------------------------------------------------
+            | Update Attendance
+            |--------------------------------------------------------------------------
+            */
+
+            $attendance->update([
+                'check_in_time'  => $checkIn,
+                'check_out_time' => $checkOut,
+                'remarks'        => $request->reason,
+
+                'resolved_by'    => auth()->id(),
+                'resolved_at'    => now(),
+
+                'check_out_lat' => $request->check_out_lat,
+                'check_out_lng' => $request->check_out_lng,
+
+                'status'         => 'Checked Out',
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | Recalculate Attendance
+            |--------------------------------------------------------------------------
+            */
+
+            $this->recalculateAttendance($attendance);
+
+            // Reload attendance so the newly calculated values are available
+            $attendance->refresh();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Activity Log
+            |--------------------------------------------------------------------------
+            */
+
+            \Log::info('Attendance Relationship Debug', [
+
+            'attendance_id' => $attendance->id,
+
+            'employee_loaded' => $attendance->relationLoaded('employee'),
+            'employee_exists' => !is_null($attendance->employee),
+
+            'user_loaded' => $attendance->employee
+                ? $attendance->employee->relationLoaded('user')
+                : false,
+
+            'user_exists' => !is_null($attendance->employee?->user),
+
+            'shift_loaded' => $attendance->relationLoaded('shift'),
+            'shift_exists' => !is_null($attendance->shift),
+
+        ]);
+
+            log_activity(
+
+                'attendance_adjusted',
+
+                'Attendance Adjusted',
+
+                'Attendance for employee "' .
+                $attendance->employee->user->name .
+                '" was adjusted.<br><br>' .
+
+                '<strong>Shift:</strong> ' . $attendance->shift->title . '<br>' .
+
+                '<strong>Original Check In:</strong> ' .
+                ($originalCheckIn
+                    ? $originalCheckIn->format('d M Y h:i:s A')
+                    : 'N/A') . '<br>' .
+
+                '<strong>New Check In:</strong> ' .
+                ($attendance->check_in_time
+                    ? $attendance->check_in_time->format('d M Y h:i:s A')
+                    : 'N/A') . '<br><br>' .
+
+                '<strong>Original Check Out:</strong> ' .
+                ($originalCheckOut
+                    ? $originalCheckOut->format('d M Y h:i:s A')
+                    : 'Not Checked Out') . '<br>' .
+
+                '<strong>New Check Out:</strong> ' .
+                ($attendance->check_out_time
+                    ? $attendance->check_out_time->format('d M Y h:i:s A')
+                    : 'Not Checked Out') . '<br><br>' .
+
+                '<strong>Status:</strong> ' .
+                $originalStatus . ' → ' . $attendance->status . '<br>' .
+
+                '<strong>Worked Hours:</strong> ' .
+                ($attendance->worked_hours ?? 0) . ' hrs<br>' .
+
+                '<strong>Reason:</strong> ' .
+                e($request->reason)
+
+            );
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Attendance updated successfully.',
+                'attendance' => $attendance
+            ]);
+
+        } catch (\Throwable $e) {
+
+            DB::rollBack();
+
+            \Log::error('Attendance Adjustment Error', [
+                'attendance_id' => $attendance->id,
+                'message'       => $e->getMessage(),
+                'trace'         => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to update attendance.',
+            ], 500);
+
+        }
+    }
+
+    
+    // |--------------------------------------------------------------------------
+    // | Recalculate Attendance
+    // |--------------------------------------------------------------------------
+    
+    private function recalculateAttendance(Attendance $attendance): void
+    {
+
+        $shift = $attendance->shift;
+
+        $checkIn = $attendance->check_in_time;
+
+        $checkOut = $attendance->check_out_time;
+
+        if (!$checkIn) {
+
+            return;
+
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Shift Start & End
+        |--------------------------------------------------------------------------
+        */
+
+        $shiftStart = Carbon::parse(
+            $shift->shift_date . ' ' . $shift->start_time,
+            $shift->timezone
+        );
+
+        $shiftEnd = Carbon::parse(
+            $shift->shift_date . ' ' . $shift->end_time,
+            $shift->timezone
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Late Minutes
+        |--------------------------------------------------------------------------
+        */
+
+        $graceTime = $shiftStart
+            ->copy()
+            ->addMinutes($shift->late_after_minutes);
+
+        $lateMinutes = 0;
+
+        if ($checkIn->gt($graceTime)) {
+
+            $lateMinutes = $checkIn->diffInMinutes($graceTime);
+
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Worked Time
+        |--------------------------------------------------------------------------
+        */
+
+        $workedMinutes = 0;
+
+        $workedHours = 0;
+
+        $earlyLeave = 0;
+
+        if ($checkOut) {
+
+            $workedMinutes = $checkIn->diffInMinutes($checkOut);
+
+            $workedHours = round($workedMinutes / 60, 2);
+
+            if ($checkOut->lt($shiftEnd)) {
+
+                $earlyLeave = $checkOut->diffInMinutes($shiftEnd);
+
+            }
+
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Attendance Status
+        |--------------------------------------------------------------------------
+        */
+
+        $status = 'Pending';
+
+        if ($checkIn && !$checkOut) {
+
+            $status = $lateMinutes > 0
+                ? 'Late'
+                : 'Checked In';
+
+        }
+
+        if ($checkIn && $checkOut) {
+
+            $status = $earlyLeave > 0
+                ? 'Early Leave'
+                : 'Checked Out';
+
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Save
+        |--------------------------------------------------------------------------
+        */
+
+        $attendance->update([
+
+            'worked_minutes' => $workedMinutes,
+
+            'worked_hours' => $workedHours,
+
+            'late_minutes' => $lateMinutes,
+
+            'early_leave_minutes' => $earlyLeave,
+
+            'status' => $status,
+
+        ]);
+
     }
     
 }

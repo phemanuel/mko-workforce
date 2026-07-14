@@ -471,6 +471,331 @@
 
 @include('admin.attendance.inspector')
 
+<!-- ==========================================================
+    ADJUST ATTENDANCE MODAL
+========================================================== -->
+
+<div id="adjustAttendanceModal"
+     class="fixed inset-0 z-[10000] hidden">
+
+    <!-- Overlay -->
+    <div id="adjustAttendanceModalOverlay"
+         class="absolute inset-0 bg-black/40 backdrop-blur-sm">
+    </div>
+
+    <!-- Modal Wrapper -->
+    <div class="relative h-screen flex items-center justify-center p-4">
+
+        <!-- Modal -->
+        <div class="w-full max-w-5xl bg-white rounded-3xl shadow-2xl
+                    h-[90vh] flex flex-col overflow-hidden">
+
+             <!-- Header -->
+            <div class="flex items-center justify-between border-b px-6 py-5 shrink-0">
+
+                <div>
+
+                    <h2 class="text-2xl font-bold text-slate-800">
+
+                        Adjust Attendance
+
+                    </h2>
+
+                    <p class="text-sm text-slate-500 mt-1">
+
+                        Correct attendance information.
+
+                    </p>
+
+                </div>
+
+                <button
+                    id="closeAdjustAttendanceModal"
+                    class="w-10 h-10 rounded-xl hover:bg-slate-100">
+
+                    ✕
+
+                </button>
+
+            </div>
+
+            <!-- Body -->
+
+            <form
+            id="adjustAttendanceForm"
+            class="flex-1 overflow-y-auto p-6 space-y-6">
+
+                @csrf
+
+                <input type="hidden" id="adjustAttendanceId">
+
+                <!-- ================================================= -->
+                <!-- EMPLOYEE INFORMATION -->
+                <!-- ================================================= -->
+
+                <div class="w-full max-w-3xl bg-white rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
+
+                    <h3 class="text-lg font-semibold mb-5">
+
+                        Employee Information
+
+                    </h3>
+
+                    <div class="grid md:grid-cols-2 gap-5">
+
+                        <div>
+                            <label class="text-sm text-slate-500">Employee</label>
+
+                            <input
+                                id="adjustEmployee"
+                                readonly
+                                class="w-full mt-2 rounded-xl border bg-slate-100 px-4 py-3">
+                        </div>
+
+                        <div>
+                            <label class="text-sm text-slate-500">Role</label>
+
+                            <input
+                                id="adjustRole"
+                                readonly
+                                class="w-full mt-2 rounded-xl border bg-slate-100 px-4 py-3">
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- SHIFT INFORMATION -->
+                <!-- ================================================= -->
+
+                <div class="bg-slate-50 border rounded-2xl p-5">
+
+                    <h3 class="text-lg font-semibold mb-5">
+
+                        Shift Information
+
+                    </h3>
+
+                    <div class="grid md:grid-cols-2 gap-5">
+
+                        <div>
+                            <label class="text-sm text-slate-500">Shift</label>
+                            <input id="adjustShift" readonly class="w-full mt-2 rounded-xl border bg-slate-100 px-4 py-3">
+                        </div>
+
+                        <div>
+                            <label class="text-sm text-slate-500">Shift Date</label>
+                            <input id="adjustShiftDate" readonly class="w-full mt-2 rounded-xl border bg-slate-100 px-4 py-3">
+                        </div>
+
+                        <div>
+                            <label class="text-sm text-slate-500">Scheduled Start</label>
+                            <input id="adjustShiftStart" readonly class="w-full mt-2 rounded-xl border bg-slate-100 px-4 py-3">
+                        </div>
+
+                        <div>
+                            <label class="text-sm text-slate-500">Scheduled End</label>
+                            <input id="adjustShiftEnd" readonly class="w-full mt-2 rounded-xl border bg-slate-100 px-4 py-3">
+                        </div>
+
+                        <div>
+                            <label class="text-sm text-slate-500">Check-in Opens</label>
+                            <input id="adjustCheckInOpen" readonly class="w-full mt-2 rounded-xl border bg-slate-100 px-4 py-3">
+                        </div>
+
+                        <div>
+                            <label class="text-sm text-slate-500">Late After</label>
+                            <input id="adjustLateAfter" readonly class="w-full mt-2 rounded-xl border bg-slate-100 px-4 py-3">
+                        </div>
+
+                        <div>
+                            <label class="text-sm text-slate-500">Location</label>
+                            <input id="adjustLocation" readonly class="w-full mt-2 rounded-xl border bg-slate-100 px-4 py-3">
+                        </div>
+
+                        <div>
+                            <label class="text-sm text-slate-500">Timezone</label>
+                            <input id="adjustTimezone" readonly class="w-full mt-2 rounded-xl border bg-slate-100 px-4 py-3">
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- ATTENDANCE ADJUSTMENT -->
+                <!-- ================================================= -->
+
+                <div class="bg-white border rounded-2xl p-5">
+
+                    <h3 class="text-lg font-semibold mb-5">
+
+                        Attendance Adjustment
+
+                    </h3>
+
+                    <div class="grid md:grid-cols-2 gap-5">
+
+                        <div>
+
+                            <label class="text-sm text-slate-500">
+
+                                Check In
+
+                            </label>
+
+                            <input
+                                type="datetime-local"
+                                id="adjustCheckIn"
+                                class="w-full mt-2 rounded-xl border px-4 py-3">
+
+                        </div>
+
+                        <div>
+
+                            <label class="text-sm text-slate-500">
+
+                                Check Out
+
+                            </label>
+
+                            <input
+                                type="datetime-local"
+                                id="adjustCheckOut"
+                                class="w-full mt-2 rounded-xl border px-4 py-3">
+
+                        </div>
+
+                    </div>
+
+                    <div class="mt-5">
+
+                        <label class="text-sm text-slate-500">
+
+                            Reason
+
+                        </label>
+
+                        <textarea
+                            id="adjustReason"
+                            rows="4"
+                            class="w-full mt-2 rounded-xl border px-4 py-3"
+                            placeholder="Reason for adjusting attendance"></textarea>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+            <!-- Footer -->
+
+            <div class="border-t bg-white px-6 py-5 flex justify-end gap-3 shrink-0">
+
+                <button
+                    type="button"
+                    id="cancelAdjustAttendanceModal"
+                    class="px-5 py-3 border rounded-xl">
+
+                    Cancel
+
+                </button>
+
+                <button
+                    type="submit"
+                    form="adjustAttendanceForm"
+                    class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-xl text-white font-semibold">
+
+                    Save Changes
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+    /*
+|--------------------------------------------------------------------------
+| Admin GPS Coordinates
+|--------------------------------------------------------------------------
+*/
+
+let adminLat = null;
+let adminLng = null;
+
+function getAdminLocation()
+{
+    if (!navigator.geolocation) {
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+
+        function(position) {
+
+            adminLat = position.coords.latitude;
+            adminLng = position.coords.longitude;
+
+        },
+
+        function(error) {
+
+            console.warn('Unable to retrieve location:', error.message);
+
+        },
+
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+
+    );
+}
+</script>
+
+
+<script>
+function format12Hour(time) {
+        if (!time) return '--';
+
+        const [hours, minutes] = time.split(':');
+        const date = new Date();
+        date.setHours(hours, minutes);
+
+        return date.toLocaleTimeString([], {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+    }
+
+    function formatDateTime12Hour(dateTime) {
+    if (!dateTime) return '--';
+
+    const date = new Date(dateTime.replace(' ', 'T'));
+
+        return date.toLocaleString([], {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        });
+    }
+</script>
+
 <script>
 /*
 |--------------------------------------------------------------------------
@@ -529,45 +854,13 @@ function closeAttendanceInspector()
         .classList.add('hidden');
 }
 
-
-
 /*
 |--------------------------------------------------------------------------
 | POPULATE INSPECTOR
 |--------------------------------------------------------------------------
 */
 function populateAttendanceInspector(att)
-{
-
-    function format12Hour(time) {
-        if (!time) return '--';
-
-        const [hours, minutes] = time.split(':');
-        const date = new Date();
-        date.setHours(hours, minutes);
-
-        return date.toLocaleTimeString([], {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-        });
-    }
-
-    function formatDateTime12Hour(dateTime) {
-    if (!dateTime) return '--';
-
-    const date = new Date(dateTime.replace(' ', 'T'));
-
-        return date.toLocaleString([], {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true
-        });
-    }
+{   
     
 
     document.getElementById('inspectorEmployee').textContent =
@@ -709,6 +1002,12 @@ function populateAttendanceInspector(att)
         actionsCard.classList.remove('hidden');
 
         resolveBtn.classList.remove('hidden');
+
+        resolveBtn.onclick = function () {
+
+            openAdjustAttendanceModal(att);
+
+        };
 
         actionMessage.classList.remove('hidden');
 
@@ -902,6 +1201,114 @@ document
 
 });
 </script>
+
+<script>
+    /*
+|--------------------------------------------------------------------------
+| ADJUST ATTENDANCE MODAL
+|--------------------------------------------------------------------------
+*/
+
+let currentAttendance = null;
+
+function convertToDateTimeLocal(dateTime)
+{
+    if (!dateTime) return '';
+
+    return dateTime.replace(' ', 'T').substring(0,16);
+}
+
+function openAdjustAttendanceModal(att)
+{
+    currentAttendance = att;   
+    
+    getAdminLocation();
+
+
+    document.getElementById('adjustAttendanceId').value = att.id;
+
+    /*
+    |--------------------------------------------------------------------------
+    | Employee
+    |--------------------------------------------------------------------------
+    */
+
+    document.getElementById('adjustEmployee').value =
+        att.employee?.user?.name ?? '';
+
+    document.getElementById('adjustRole').value =
+        att.employee?.primary_role ?? '';
+
+    /*
+    |--------------------------------------------------------------------------
+    | Shift
+    |--------------------------------------------------------------------------
+    */
+
+    document.getElementById('adjustShift').value =
+        att.shift?.title ?? '';
+
+    document.getElementById('adjustShiftDate').value =
+        att.shift?.shift_date ?? '';
+
+    document.getElementById('adjustShiftStart').value =
+        format12Hour(att.shift?.start_time);
+
+    document.getElementById('adjustShiftEnd').value =
+        format12Hour(att.shift?.end_time);
+
+    document.getElementById('adjustCheckInOpen').value =
+        (att.shift?.check_in_open_minutes ?? 0) + ' mins before start';
+
+    document.getElementById('adjustLateAfter').value =
+        (att.shift?.late_after_minutes ?? 0) + ' mins after start';
+
+    document.getElementById('adjustLocation').value =
+        att.shift?.location ?? '';
+
+    document.getElementById('adjustTimezone').value =
+        att.shift?.timezone ?? '';
+
+    /*
+    |--------------------------------------------------------------------------
+    | Attendance
+    |--------------------------------------------------------------------------
+    */
+
+    document.getElementById('adjustCheckIn').value =
+        convertToDateTimeLocal(att.check_in_time);
+
+    document.getElementById('adjustCheckOut').value =
+        convertToDateTimeLocal(att.check_out_time);
+
+    document.getElementById('adjustReason').value = '';
+
+    document
+        .getElementById('adjustAttendanceModal')
+        .classList.remove('hidden');
+}
+
+function closeAdjustAttendanceModal()
+{
+    document
+        .getElementById('adjustAttendanceModal')
+        .classList.add('hidden');
+}
+
+document
+.getElementById('closeAdjustAttendanceModal')
+.addEventListener('click', closeAdjustAttendanceModal);
+
+document
+.getElementById('cancelAdjustAttendanceModal')
+.addEventListener('click', closeAdjustAttendanceModal);
+
+document
+.getElementById('adjustAttendanceModalOverlay')
+.addEventListener('click', closeAdjustAttendanceModal);
+
+</script>
+
 <script>
 document.querySelectorAll('.attendance-toggle').forEach(button => {
 
@@ -918,5 +1325,80 @@ document.querySelectorAll('.attendance-toggle').forEach(button => {
     });
 
 });
+</script>
+
+<script> const adjustAttendanceUrlTemplate = "{{ route('admin.attendance.adjust', ':id') }}"; </script>
+
+<script>
+
+document
+.getElementById('adjustAttendanceForm')
+.addEventListener('submit', function(e){
+
+    e.preventDefault();
+
+    const attendanceId =
+        document.getElementById('adjustAttendanceId').value;
+
+    const url =
+        adjustAttendanceUrlTemplate.replace(':id', attendanceId);
+
+    fetch(url, {
+
+        method: 'POST',
+
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN':
+                document.querySelector('meta[name="csrf-token"]').content
+        },
+
+        body: JSON.stringify({
+
+            check_in_time:
+                document.getElementById('adjustCheckIn').value,
+
+            check_out_time:
+                document.getElementById('adjustCheckOut').value,
+
+            reason:
+                document.getElementById('adjustReason').value,
+            
+            check_out_lat: adminLat,
+
+            check_out_lng: adminLng
+
+        })
+
+    })
+    .then(res => res.json())
+    .then(res => {
+
+        if(res.success){
+
+            alert('Attendance Updated');
+
+            closeAdjustAttendanceModal();
+
+            location.reload();
+
+        } else {
+
+            alert(res.message);
+
+        }
+
+    })
+    .catch(err => {
+
+        console.error(err);
+
+        alert('Unable to update attendance.');
+
+    });
+
+});
+
 </script>
 @endsection

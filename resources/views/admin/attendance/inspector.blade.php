@@ -420,3 +420,5 @@
     onclick="closeAttendanceInspector()"
     class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-[9998]">
 </div>
+
+

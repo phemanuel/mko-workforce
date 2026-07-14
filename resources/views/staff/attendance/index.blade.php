@@ -314,7 +314,7 @@
 
                             </div>
 
-                        </div>
+                        </div>                        
 
                     </div>
 
@@ -402,9 +402,85 @@
 
                         </p>
 
-                    </div>
+                    </div>                    
 
                 </div>
+
+                @if($attendance->remarks)
+
+                        <div class="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+
+                            <div class="flex items-start gap-3">
+
+                                <div class="text-2xl">
+                                    🛠
+                                </div>
+
+                                <div class="flex-1">
+
+                                    <h4 class="font-semibold text-amber-900">
+                                        Attendance Resolution
+                                    </h4>
+
+                                    <p class="text-sm text-amber-800 mt-1">
+                                        This attendance was adjusted by an administrator or supervisor.
+                                    </p>
+
+                                    <div class="mt-4 space-y-3">
+
+                                        <div>
+
+                                            <p class="text-xs uppercase tracking-wide text-amber-700">
+                                                Reason
+                                            </p>
+
+                                            <p class="text-sm text-slate-700">
+                                                {{ $attendance->remarks }}
+                                            </p>
+
+                                        </div>
+
+                                        @if($attendance->resolved_at)
+
+                                        <div>
+
+                                            <p class="text-xs uppercase tracking-wide text-amber-700">
+                                                Resolved On
+                                            </p>
+
+                                            <p class="text-sm text-slate-700">
+                                                {{ $attendance->resolved_at->format('d M Y h:i A') }}
+                                            </p>
+
+                                        </div>
+
+                                        @endif
+
+                                        @if($attendance->resolver)
+
+                                        <div>
+
+                                            <p class="text-xs uppercase tracking-wide text-amber-700">
+                                                Resolved By
+                                            </p>
+
+                                            <p class="text-sm text-slate-700">
+                                                {{ $attendance->resolver->name }}
+                                            </p>
+
+                                        </div>
+
+                                        @endif
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        @endif
 
                 <!-- Footer -->
 
