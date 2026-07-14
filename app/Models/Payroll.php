@@ -9,6 +9,11 @@ class Payroll extends Model
 {
     use HasFactory;
 
+    public const STATUS_DRAFT = 'Draft';
+    public const STATUS_APPROVED = 'Approved';
+    public const STATUS_PAID = 'Paid';
+    public const STATUS_CANCELLED = 'Cancelled';
+
     protected $fillable = [
         'employee_id',
         'payroll_number',
@@ -28,20 +33,35 @@ class Payroll extends Model
         'generated_by',
         'approved_by',
         'remarks',
+        'paid_by',
+        'approved_at',
+        'paid_at',
+        
     ];
 
     protected $casts = [
         'period_start' => 'date',
-        'period_end' => 'date',
+        'period_end'   => 'date',
         'payment_date' => 'date',
 
-        'total_hours' => 'decimal:2',
-        'gross_pay' => 'decimal:2',
-        'allowance' => 'decimal:2',
-        'bonus' => 'decimal:2',
-        'deduction' => 'decimal:2',
-        'tax' => 'decimal:2',
-        'net_pay' => 'decimal:2',
+        'approved_at' => 'datetime',
+        'paid_at'     => 'datetime',
+
+        'total_hours'      => 'decimal:2',
+        'gross_pay'        => 'decimal:2',
+
+        'allowance'        => 'decimal:2',
+        'bonus'            => 'decimal:2',
+        'overtime'         => 'decimal:2',
+
+        'deduction'        => 'decimal:2',
+        'tax'              => 'decimal:2',
+        'pension'          => 'decimal:2',
+        'nhf'              => 'decimal:2',
+        'loan'             => 'decimal:2',
+        'other_deduction'  => 'decimal:2',
+
+        'net_pay'          => 'decimal:2',
     ];
 
     /*

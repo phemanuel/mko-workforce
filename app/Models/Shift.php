@@ -61,6 +61,11 @@ class Shift extends Model
         return $this->belongsTo(User::class, 'supervisor_id');
     }
 
+    public function payrollItems()
+    {
+        return $this->hasMany(PayrollItem::class);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Shift Lock

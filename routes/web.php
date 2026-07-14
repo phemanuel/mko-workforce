@@ -12,6 +12,8 @@ use App\Http\Controllers\AdminReviewController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\StaffShiftController;
+use App\Http\Controllers\StaffPayrollController;
+use App\Http\Controllers\PayrollController;
 
 
 
@@ -140,9 +142,6 @@ use App\Http\Controllers\StaffShiftController;
         //--------Attendance Routes
          Route::get('/attendance', [AttendanceController::class, 'index'])
         ->name('attendance.index');
-        // Route::resource('attendance', AttendanceController::class)
-        // ->only(['index','show']);
-
         Route::post(
             '/attendance/{assignment}/check-in',
             [AttendanceController::class,'checkIn']
@@ -158,6 +157,21 @@ use App\Http\Controllers\StaffShiftController;
 
         Route::post('/attendance/{attendance}/adjust',[AttendanceController::class,'adjustAttendance'])
         ->name('admin.attendance.adjust');
+        //---Payroll Routes
+        Route::get('/', [PayrollController::class, 'index'])
+            ->name('index');
+
+        Route::post('/generate', [PayrollController::class, 'generate'])
+            ->name('generate');
+
+        Route::get('/{payroll}', [PayrollController::class, 'show'])
+            ->name('show');
+
+        Route::post('/{payroll}/approve', [PayrollController::class, 'approve'])
+            ->name('approve');
+
+        Route::post('/{payroll}/paid', [PayrollController::class, 'markPaid'])
+            ->name('paid');        
 
     });
 
@@ -191,7 +205,16 @@ use App\Http\Controllers\StaffShiftController;
             ->name('attendance.index');
 
         Route::get('/attendance/{attendance}', [AttendanceController::class, 'StaffAttendanceShow'])
-            ->name('attendance.show');       
+            ->name('attendance.show'); 
+            
+        Route::get('/payroll', [StaffPayrollController::class, 'index'])
+            ->name('payroll.index');
+
+        Route::get('/payroll/{payroll}', [StaffPayrollController::class, 'show'])
+            ->name('payroll.show');
+
+        Route::get('/payroll/{payroll}/download', [StaffPayrollController::class, 'download'])
+            ->name('payroll.download');
         
 
     });

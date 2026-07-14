@@ -28,9 +28,9 @@
         ⏱ Attendance
     </a>
 
-    <a href="/staff/payments"
+    <a href="/staff/payroll"
        class="block px-4 py-2 rounded hover:bg-gray-800
-       {{ request()->routeIs('staff.payments*') ? 'bg-gray-800 text-white' : '' }}">
+       {{ request()->routeIs('payroll.index*') ? 'bg-gray-800 text-white' : '' }}">
         💰 Payments
     </a>
 
