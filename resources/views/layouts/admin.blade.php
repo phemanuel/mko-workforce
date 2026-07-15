@@ -36,7 +36,7 @@
 
     <a href="/admin/payroll"
        class="block px-4 py-2 rounded hover:bg-gray-800
-       {{ request()->routeIs('admin.payroll*') ? 'bg-gray-800 text-white' : '' }}">
+       {{ request()->routeIs('payroll.index.admin*') ? 'bg-gray-800 text-white' : '' }}">
         💰 Payroll
     </a>
 

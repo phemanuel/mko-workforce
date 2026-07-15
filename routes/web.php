@@ -158,20 +158,23 @@ use App\Http\Controllers\PayrollController;
         Route::post('/attendance/{attendance}/adjust',[AttendanceController::class,'adjustAttendance'])
         ->name('admin.attendance.adjust');
         //---Payroll Routes
-        Route::get('/', [PayrollController::class, 'index'])
-            ->name('index');
+        Route::get('/payroll', [PayrollController::class, 'index'])
+            ->name('payroll.index.admin');
 
-        Route::post('/generate', [PayrollController::class, 'generate'])
-            ->name('generate');
+        Route::post('/payroll/preview', [PayrollController::class, 'preview'])
+            ->name('admin.payroll.preview');
+
+        Route::post('/payroll/generate', [PayrollController::class, 'generate'])
+            ->name('admin.payroll.generate');
 
         Route::get('/{payroll}', [PayrollController::class, 'show'])
-            ->name('show');
+            ->name('payroll.show');
 
         Route::post('/{payroll}/approve', [PayrollController::class, 'approve'])
-            ->name('approve');
+            ->name('payroll.approve');
 
         Route::post('/{payroll}/paid', [PayrollController::class, 'markPaid'])
-            ->name('paid');        
+            ->name('payroll.markPaid');        
 
     });
 
