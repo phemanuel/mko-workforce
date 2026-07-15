@@ -6,8 +6,11 @@ use Illuminate\Http\Request;
 use App\Models\Attendance;
 use App\Models\Employee;
 use App\Models\Payroll;
+use App\Models\PayrollItem;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class PayrollController extends Controller
 {
@@ -364,7 +367,7 @@ class PayrollController extends Controller
 
                 'employee_id' => $employee->id,
 
-                'employee_number' => $employee->employee_number,
+                'employee_role' => $employee->primary_role,
 
                 'name' => optional($employee->user)->name,
 
@@ -418,6 +421,434 @@ class PayrollController extends Controller
 
         ]);
 
+    }
+
+    public function generate(Request $request)
+    {
+        /*
+        |--------------------------------------------------------------------------
+        | Validate Request
+        |--------------------------------------------------------------------------
+        |
+        | Validate the selected payroll period before processing.
+        | Both dates are required and the end date cannot be before the start date.
+        |
+        */
+
+        $validated = $request->validate([
+
+            'start_date' => [
+                'required',
+                'date',
+            ],
+
+            'end_date' => [
+                'required',
+                'date',
+                'after_or_equal:start_date',
+            ],
+
+        ]);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Parse Payroll Period
+        |--------------------------------------------------------------------------
+        |
+        | Convert the selected dates into Carbon instances.
+        | We use the full day (00:00:00 → 23:59:59) so no attendance
+        | records are missed.
+        |
+        */
+
+        $startDate = Carbon::parse($validated['start_date'])
+            ->startOfDay();
+
+        $endDate = Carbon::parse($validated['end_date'])
+            ->endOfDay();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Retrieve Completed Attendances
+        |--------------------------------------------------------------------------
+        |
+        | Payroll is generated only from completed attendance records.
+        | Load all relationships required for payroll calculation to
+        | avoid N+1 query issues.
+        |
+        */
+
+        $attendances = Attendance::with([
+
+                'employee.user',
+
+                'shift',
+
+            ])
+
+            ->whereBetween('check_out_time', [
+
+                $startDate,
+
+                $endDate,
+
+            ])
+
+            ->whereIn('status', [
+
+                'Completed',
+
+                'Checked Out',
+
+            ])
+
+            ->orderBy('employee_id')
+
+            ->orderBy('check_out_time')
+
+            ->get();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Ensure There Are Records To Process
+        |--------------------------------------------------------------------------
+        |
+        | Stop payroll generation if no completed attendance records
+        | were found for the selected payroll period.
+        |
+        */
+
+        if ($attendances->isEmpty()) {
+
+            return response()->json([
+
+                'success' => false,
+
+                'message' => 'No completed attendance records were found for the selected payroll period.',
+
+            ], 422);
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Initialize Counters
+        |--------------------------------------------------------------------------
+        |
+        | These counters will be returned to the UI after payroll
+        | generation has completed.
+        |
+        */
+
+        $createdPayrolls = 0;
+
+        $skippedPayrolls = 0;
+
+        $totalPayrollAmount = 0;
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Begin Database Transaction
+        |--------------------------------------------------------------------------
+        |
+        | Wrap the payroll generation process inside a database
+        | transaction so that either all payroll records are created
+        | successfully or none are.
+        |
+        */
+
+        try {
+
+            DB::transaction(function () use (
+
+                $attendances,
+                $startDate,
+                $endDate,
+                &$createdPayrolls,
+                &$skippedPayrolls,
+                &$totalPayrollAmount
+
+            ) {
+
+                /*
+                |--------------------------------------------------------------------------
+                | Group Attendances By Employee
+                |--------------------------------------------------------------------------
+                |
+                | Each employee should have one payroll record containing
+                | multiple payroll items (one item per attendance).
+                |
+                */
+
+                foreach ($attendances->groupBy('employee_id') as $employeeId => $employeeAttendances) {
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Check Existing Payroll
+                    |--------------------------------------------------------------------------
+                    |
+                    | An employee can only have one payroll record for a payroll
+                    | period. If one already exists, skip this employee.
+                    |
+                    */
+
+                    $existingPayroll = Payroll::where('employee_id', $employeeId)
+
+                        ->whereDate('period_start', $startDate)
+
+                        ->whereDate('period_end', $endDate)
+
+                        ->first();
+
+                    if ($existingPayroll) {
+
+                        $skippedPayrolls++;
+
+                        continue;
+
+                    }
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Get Employee Information
+                    |--------------------------------------------------------------------------
+                    |
+                    | Retrieve the employee from the first attendance record.
+                    | All attendance records in this group belong to the same employee.
+                    |
+                    */
+
+                    $employee = $employeeAttendances->first()->employee;
+
+                    if (!$employee) {
+
+                        continue;
+
+                    }
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Initialize Employee Payroll Totals
+                    |--------------------------------------------------------------------------
+                    |
+                    | These variables accumulate the employee's payroll while
+                    | processing each completed attendance record.
+                    |
+                    */
+
+                    $totalShifts = 0;
+
+                    $totalHours = 0;
+
+                    $grossPay = 0;
+
+                    $allowance = 0;
+
+                    $bonus = 0;
+
+                    $deduction = 0;
+
+                    $tax = 0;
+
+                    $netPay = 0;
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Generate Payroll Number
+                    |--------------------------------------------------------------------------
+                    */
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Create Payroll Header
+                    |--------------------------------------------------------------------------
+                    */
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Process Employee Attendance Records
+                    |--------------------------------------------------------------------------
+                    */
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Calculate Shift Earnings
+                        |--------------------------------------------------------------------------
+                        */
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Create Payroll Item
+                        |--------------------------------------------------------------------------
+                        */
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Update Running Totals
+                        |--------------------------------------------------------------------------
+                        */
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Update Payroll Totals
+                    |--------------------------------------------------------------------------
+                    */
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Increment Generated Counter
+                    |--------------------------------------------------------------------------
+                    */
+
+                }
+
+            });
+
+        } catch (\Throwable $e) {
+
+            /*
+            |--------------------------------------------------------------------------
+            | Handle Exceptions
+            |--------------------------------------------------------------------------
+            */
+
+            report($e);
+
+            return response()->json([
+
+                'success' => false,
+
+                'message' => 'Payroll generation failed.',
+
+            ], 500);
+
+        }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Group Attendances By Employee
+            |--------------------------------------------------------------------------
+            */
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Check Existing Payroll
+                |--------------------------------------------------------------------------
+                */
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Get Employee Information
+                |--------------------------------------------------------------------------
+                */
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Initialize Employee Payroll Totals
+                |--------------------------------------------------------------------------
+                */
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Generate Payroll Number
+                |--------------------------------------------------------------------------
+                */
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Create Payroll Header
+                |--------------------------------------------------------------------------
+                */
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Process Employee Attendance Records
+                |--------------------------------------------------------------------------
+                */
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Calculate Shift Earnings
+                    |--------------------------------------------------------------------------
+                    */
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Create Payroll Item
+                    |--------------------------------------------------------------------------
+                    */
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Update Running Totals
+                    |--------------------------------------------------------------------------
+                    */
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Update Payroll Totals
+                |--------------------------------------------------------------------------
+                */
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Increment Generated Counter
+                |--------------------------------------------------------------------------
+                */
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Commit Transaction
+        |--------------------------------------------------------------------------
+        */
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Record Activity Log
+        |--------------------------------------------------------------------------
+        */
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Return Success Response
+        |--------------------------------------------------------------------------
+        */
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Handle Exceptions
+        |--------------------------------------------------------------------------
+        */
     }
 
 

@@ -885,7 +885,7 @@ function renderPreview(data)
 
                     <div class="text-sm text-slate-500">
 
-                        ${employee.employee_number}
+                        ${employee.employee_role}
 
                     </div>
 
@@ -1060,6 +1060,106 @@ function bindEmployeePreviewRows()
         });
 
     });
+}
+
+/*==========================================================
+| Generate Payroll
+==========================================================*/
+
+confirmGeneratePayroll.addEventListener('click', generatePayroll);
+
+async function generatePayroll()
+{
+    if (!confirm('Generate payroll for this period?')) {
+        return;
+    }
+
+    confirmGeneratePayroll.disabled = true;
+
+    confirmGeneratePayroll.innerHTML = `
+        <span class="inline-flex items-center gap-2">
+
+            <svg class="animate-spin h-5 w-5"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24">
+
+                <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4">
+                </circle>
+
+                <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4l3-3-3-3v4A10 10 0 002 12h2z">
+                </path>
+
+            </svg>
+
+            Generating Payroll...
+
+        </span>
+    `;
+
+    try {
+
+        const response = await fetch("{{ route('admin.payroll.generate') }}", {
+
+            method: "POST",
+
+            headers: {
+
+                "Content-Type": "application/json",
+
+                "X-CSRF-TOKEN": "{{ csrf_token() }}"
+
+            },
+
+            body: JSON.stringify({
+
+                start_date: payrollStartDate.value,
+
+                end_date: payrollEndDate.value
+
+            })
+
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+
+            alert(data.message ?? 'Payroll generation failed.');
+
+            return;
+
+        }
+
+        alert(data.message);
+
+        closePayrollModal();
+
+        location.reload();
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert('An unexpected error occurred.');
+
+    } finally {
+
+        confirmGeneratePayroll.disabled = false;
+
+        confirmGeneratePayroll.innerHTML = 'Generate Payroll';
+
+    }
+
 }
 
 </script>

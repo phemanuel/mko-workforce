@@ -28,6 +28,10 @@ class Shift extends Model
         'late_after_minutes',
     ];
 
+    protected $casts = [
+        'shift_date' => 'date',
+    ];
+
     /*
     |--------------------------------------------------------------------------
     | ASSIGNMENTS
