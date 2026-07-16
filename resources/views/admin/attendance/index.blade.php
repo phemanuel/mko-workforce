@@ -1054,6 +1054,89 @@ function populateAttendanceInspector(att)
 
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | RESOLUTION
+    |--------------------------------------------------------------------------
+    */
+
+    const resolution = document.getElementById('attendanceResolution');
+
+    if (att.remarks) {
+
+        resolution.innerHTML = `
+            <div class="space-y-4">
+
+                <div class="flex justify-between">
+
+                    <span>Resolution Status</span>
+
+                    <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-sm font-medium">
+
+                        Administratively Adjusted
+
+                    </span>
+
+                </div>
+
+                <div class="flex justify-between">
+
+                    <span>Resolved By</span>
+
+                    <strong>
+
+                        ${att.resolver
+                            ? att.resolver.name
+                            : 'Administrator'}
+
+                    </strong>
+
+                </div>
+
+                <div class="flex justify-between">
+
+                    <span>Resolved On</span>
+
+                    <strong>
+
+                        ${att.resolved_at
+                            ? formatDateTime12Hour(att.resolved_at)
+                            : '--'}
+
+                    </strong>
+
+                </div>
+
+                <div>
+
+                    <p class="mb-2 font-medium">
+
+                        Reason
+
+                    </p>
+
+                    <div class="rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm leading-6">
+
+                        ${att.remarks}
+
+                    </div>
+
+                </div>
+
+            </div>
+        `;
+
+    } else {
+
+        resolution.innerHTML = `
+            <p class="text-slate-500">
+
+                No administrative adjustments have been made.
+
+            </p>
+        `;
+
+    }
 
 
     /*

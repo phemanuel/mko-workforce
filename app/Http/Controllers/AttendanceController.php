@@ -352,7 +352,9 @@ class AttendanceController extends Controller
     {
         $attendance->load([
             'employee.user',
+            'shift',
             'shift.supervisor',
+            'resolver',
         ]);
 
         /*

@@ -242,6 +242,28 @@
         </div>
 
 
+        <!-- ATTENDANCE RESOLUTION -->
+
+        <div class="bg-white border rounded-2xl p-5">
+
+            <h3 class="font-bold text-lg mb-4">
+
+                Attendance Resolution
+
+            </h3>
+
+            <div id="attendanceResolution">
+
+                <p class="text-slate-500">
+
+                    No administrative adjustments have been made.
+
+                </p>
+
+            </div>
+
+        </div>
+
 
         <!-- GPS -->
 

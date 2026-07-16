@@ -71,7 +71,12 @@ class Attendance extends Model
         }
 
         public function payrollItem()
-    {
-        return $this->hasOne(PayrollItem::class);
-    }
+        {
+            return $this->hasOne(PayrollItem::class);
+        }
+
+        public function resolver()
+        {
+            return $this->belongsTo(User::class, 'resolved_by');
+        }
 }
