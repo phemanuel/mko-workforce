@@ -58,62 +58,138 @@
         <h3 class="text-lg font-semibold mb-6">
             Personal Details
         </h3>
-
+     
         <form method="POST" action="{{ route('application.step2') }}">
 
             @csrf
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {{-- ==========================================================
+                PERSONAL INFORMATION
+            =========================================================== --}}
 
-                {{-- FULL NAME --}}
+            <div>
+
+                <h3 class="text-lg font-semibold text-gray-900">
+                    Personal Information
+                </h3>
+
+                <p class="text-sm text-gray-500 mt-1">
+                    Please provide your personal details.
+                </p>
+
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+
+                {{-- FIRST NAME --}}
                 <div>
+
                     <label class="text-sm font-medium text-gray-700">
-                        Full Name
+                        First Name
                     </label>
 
-                    <input type="text"
-                        name="full_name"
-                        value="{{ old('full_name', auth()->user()->name) }}"
-                        class="w-full border rounded-lg p-3 mt-1">
+                    <input
+                        type="text"
+                        name="first_name"
+                        value="{{ old('first_name', auth()->user()->first_name) }}"
+                        class="w-full border rounded-lg p-3 mt-1"
+                    >
+
                 </div>
 
-                {{-- DOB --}}
+                {{-- MIDDLE NAME --}}
                 <div>
+
+                    <label class="text-sm font-medium text-gray-700">
+                        Middle Name
+                    </label>
+
+                    <input
+                        type="text"
+                        name="middle_name"
+                        value="{{ old('middle_name', auth()->user()->middle_name) }}"
+                        class="w-full border rounded-lg p-3 mt-1"
+                    >
+
+                </div>
+
+                {{-- LAST NAME --}}
+                <div>
+
+                    <label class="text-sm font-medium text-gray-700">
+                        Last Name
+                    </label>
+
+                    <input
+                        type="text"
+                        name="last_name"
+                        value="{{ old('last_name', auth()->user()->last_name) }}"
+                        class="w-full border rounded-lg p-3 mt-1"
+                    >
+
+                </div>
+
+                {{-- DATE OF BIRTH --}}
+                <div>
+
                     <label class="text-sm font-medium text-gray-700">
                         Date of Birth
                     </label>
 
-                    <input type="date"
+                    <input
+                        type="date"
                         name="date_of_birth"
                         value="{{ old('date_of_birth') }}"
-                        class="w-full border rounded-lg p-3 mt-1">
+                        class="w-full border rounded-lg p-3 mt-1"
+                    >
+
                 </div>
 
                 {{-- GENDER --}}
                 <div>
+
                     <label class="text-sm font-medium text-gray-700">
                         Gender
                     </label>
 
-                    <select name="gender"
-                            class="w-full border rounded-lg p-3 mt-1">
+                    <select
+                        name="gender"
+                        class="w-full border rounded-lg p-3 mt-1"
+                    >
 
-                        <option value="">Select Gender</option>
+                        <option value="">
+                            Select Gender
+                        </option>
 
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
+                        <option
+                            value="Male"
+                            {{ old('gender') === 'Male' ? 'selected' : '' }}
+                        >
+                            Male
+                        </option>
+
+                        <option
+                            value="Female"
+                            {{ old('gender') === 'Female' ? 'selected' : '' }}
+                        >
+                            Female
+                        </option>
 
                     </select>
+
                 </div>
 
                 {{-- NATIONALITY --}}
                 <div>
+
                     <label class="text-sm font-medium text-gray-700">
                         Nationality
                     </label>
 
-                    <select name="nationality"
-                            class="w-full border rounded-lg p-3 mt-1">
+                    <select
+                        name="nationality"
+                        class="w-full border rounded-lg p-3 mt-1"
+                    >
 
                         <option value="">
                             Select Nationality
@@ -121,172 +197,406 @@
 
                         @foreach($countries as $country)
 
-                            <option value="{{ $country }}"
-                                {{ old('nationality') == $country ? 'selected' : '' }}>
-
+                            <option
+                                value="{{ $country }}"
+                                {{ old('nationality') == $country ? 'selected' : '' }}
+                            >
                                 {{ $country }}
-
                             </option>
 
                         @endforeach
 
                     </select>
+
                 </div>
 
                 {{-- NI NUMBER --}}
                 <div>
+
                     <label class="text-sm font-medium text-gray-700">
                         NI Number
                     </label>
 
-                    <input type="text"
+                    <input
+                        type="text"
                         name="ni_number"
-                        class="w-full border rounded-lg p-3 mt-1">
+                        value="{{ old('ni_number') }}"
+                        class="w-full border rounded-lg p-3 mt-1"
+                    >
+
                 </div>
 
-                {{-- POSTCODE --}}
-                <div>
-                    <label class="text-sm font-medium text-gray-700">
-                        Postcode
-                    </label>
+            </div>
 
-                    <input type="text"
-                        name="postcode"
-                        class="w-full border rounded-lg p-3 mt-1">
-                </div>
+
+            {{-- ==========================================================
+                CONTACT INFORMATION
+            =========================================================== --}}
+
+            <div class="border-t mt-8 pt-6">
+
+                <h3 class="text-lg font-semibold text-gray-900">
+                    Contact Information
+                </h3>
+
+                <p class="text-sm text-gray-500 mt-1">
+                    Your contact details.
+                </p>
+
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
 
                 {{-- PHONE --}}
                 <div>
+
                     <label class="text-sm font-medium text-gray-700">
                         Phone Number
                     </label>
 
-                    <input type="text"
+                    <input
+                        type="text"
                         name="phone_no"
                         value="{{ old('phone_no', auth()->user()->phone_no) }}"
-                        class="w-full border rounded-lg p-3 mt-1">
+                        class="w-full border rounded-lg p-3 mt-1"
+                    >
+
                 </div>
 
                 {{-- EMAIL --}}
                 <div>
+
                     <label class="text-sm font-medium text-gray-700">
                         Email Address
                     </label>
 
-                    <input type="email"
+                    <input
+                        type="email"
                         value="{{ auth()->user()->email }}"
                         disabled
-                        class="w-full bg-gray-100 border rounded-lg p-3 mt-1">
+                        class="w-full bg-gray-100 border rounded-lg p-3 mt-1"
+                    >
+
                 </div>
 
             </div>
 
-            {{-- ADDRESS --}}
-            <div class="mt-4">
 
-                <label class="text-sm font-medium text-gray-700">
+            {{-- ==========================================================
+                HOME ADDRESS
+            =========================================================== --}}
+
+            <div class="border-t mt-8 pt-6">
+
+                <h3 class="text-lg font-semibold text-gray-900">
                     Home Address
-                </label>
+                </h3>
 
-                <textarea name="address"
-                        rows="3"
-                        class="w-full border rounded-lg p-3 mt-1"></textarea>
+                <p class="text-sm text-gray-500 mt-1">
+                    Enter your UK postcode to verify your location, then provide
+                    your full home address.
+                </p>
 
             </div>
 
-            {{-- EMERGENCY --}}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
 
+            <div class="mt-5">
+
+                {{-- ======================================================
+                    POSTCODE
+                ======================================================= --}}
+
+                <div class="max-w-md">
+
+                    <label
+                        for="postcode"
+                        class="text-sm font-medium text-gray-700"
+                    >
+                        Postcode
+                    </label>
+
+                    <div class="flex gap-2 mt-1">
+
+                        <input
+                            type="text"
+                            id="postcode"
+                            name="postcode"
+                            value="{{ old('postcode') }}"
+                            placeholder="e.g. SW1A 2AA"
+                            autocomplete="postal-code"
+                            maxlength="8"
+                            class="flex-1 border rounded-lg p-3 uppercase"
+                        >
+
+                        <button
+                            type="button"
+                            id="findPostcodeBtn"
+                            class="px-5 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition"
+                        >
+                            Find
+                        </button>
+
+                    </div>
+
+                    {{-- LOOKUP MESSAGE --}}
+                    <p
+                        id="postcodeLookupMessage"
+                        class="hidden text-sm mt-2"
+                    ></p>
+
+                </div>
+
+
+                {{-- ======================================================
+                    POSTCODE INFORMATION
+                ======================================================= --}}
+
+                <div
+                    id="postcodeInformation"
+                    class="hidden mt-4 max-w-2xl bg-slate-50 border border-slate-200 rounded-xl p-4"
+                >
+
+                    <div class="flex items-start gap-3">
+
+                        <div
+                            class="w-9 h-9 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0"
+                        >
+                            <svg
+                                class="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"
+                                />
+
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                                />
+                            </svg>
+                        </div>
+
+                        <div>
+
+                            <p class="text-sm font-semibold text-gray-900">
+                                Postcode verified
+                            </p>
+
+                            <p
+                                id="postcodeLocation"
+                                class="text-sm text-gray-600 mt-1"
+                            >
+                                -
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                {{-- ======================================================
+                    HOME ADDRESS
+                ======================================================= --}}
+
+                <div class="mt-4">
+
+                    <label
+                        for="homeAddress"
+                        class="text-sm font-medium text-gray-700"
+                    >
+                        Full Home Address
+                    </label>
+
+                    <textarea
+                        id="homeAddress"
+                        name="address"
+                        rows="4"
+                        placeholder="Enter your house number, street, town, etc."
+                        class="w-full border rounded-lg p-3 mt-1"
+                    >{{ old('address') }}</textarea>
+
+                    <p class="text-xs text-gray-500 mt-1">
+                        Please include your house number and street name.
+                    </p>
+
+                </div>
+
+            </div>
+
+            {{-- ==========================================================
+                EMERGENCY CONTACT
+            =========================================================== --}}
+
+            <div class="border-t mt-8 pt-6">
+
+                <h3 class="text-lg font-semibold text-gray-900">
+                    Emergency Contact
+                </h3>
+
+                <p class="text-sm text-gray-500 mt-1">
+                    Someone we can contact in case of an emergency.
+                </p>
+
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+
+                {{-- EMERGENCY CONTACT NAME --}}
                 <div>
+
                     <label class="text-sm font-medium text-gray-700">
                         Emergency Contact Name
                     </label>
 
-                    <input type="text"
+                    <input
+                        type="text"
                         name="emergency_contact_name"
-                        class="w-full border rounded-lg p-3 mt-1">
+                        value="{{ old('emergency_contact_name') }}"
+                        class="w-full border rounded-lg p-3 mt-1"
+                    >
+
                 </div>
 
+                {{-- EMERGENCY CONTACT PHONE --}}
                 <div>
+
                     <label class="text-sm font-medium text-gray-700">
                         Emergency Contact Number
                     </label>
 
-                    <input type="text"
+                    <input
+                        type="text"
                         name="emergency_contact_phone"
-                        class="w-full border rounded-lg p-3 mt-1">
+                        value="{{ old('emergency_contact_phone') }}"
+                        class="w-full border rounded-lg p-3 mt-1"
+                    >
+
                 </div>
 
             </div>
 
-            {{-- RIGHT TO WORK --}}
+
+            {{-- ==========================================================
+                RIGHT TO WORK
+            =========================================================== --}}
+
             <div class="border-t mt-8 pt-6">
 
-                <h3 class="text-lg font-semibold mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">
                     Right To Work
                 </h3>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <p class="text-sm text-gray-500 mt-1">
+                    Provide your right to work information.
+                </p>
 
-                    <div>
-                        <label class="text-sm font-medium text-gray-700">
-                            Right To Work Status
-                        </label>
+            </div>
 
-                        <select name="work_status"
-                                class="w-full border rounded-lg p-3 mt-1">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
 
-                            <option value="">Select</option>
+                {{-- RIGHT TO WORK STATUS --}}
+                <div>
 
-                            <option value="UK Citizen">
-                                UK Citizen
-                            </option>
+                    <label class="text-sm font-medium text-gray-700">
+                        Right To Work Status
+                    </label>
 
-                            <option value="BRP">
-                                BRP
-                            </option>
+                    <select
+                        name="work_status"
+                        class="w-full border rounded-lg p-3 mt-1"
+                    >
 
-                            <option value="Visa">
-                                Visa
-                            </option>
+                        <option value="">
+                            Select
+                        </option>
 
-                        </select>
-                    </div>
+                        <option
+                            value="UK Citizen"
+                            {{ old('work_status') === 'UK Citizen' ? 'selected' : '' }}
+                        >
+                            UK Citizen
+                        </option>
 
-                    <div>
-                        <label class="text-sm font-medium text-gray-700">
-                            Share Code
-                        </label>
+                        <option
+                            value="BRP"
+                            {{ old('work_status') === 'BRP' ? 'selected' : '' }}
+                        >
+                            BRP
+                        </option>
 
-                        <input type="text"
-                            name="share_code"
-                            class="w-full border rounded-lg p-3 mt-1">
-                    </div>
+                        <option
+                            value="Visa"
+                            {{ old('work_status') === 'Visa' ? 'selected' : '' }}
+                        >
+                            Visa
+                        </option>
 
-                    <div>
-                        <label class="text-sm font-medium text-gray-700">
-                            Expiry Date
-                        </label>
+                    </select>
 
-                        <input type="date"
-                            name="expiry_date"
-                            class="w-full border rounded-lg p-3 mt-1">
-                    </div>
+                </div>
+
+                {{-- SHARE CODE --}}
+                <div>
+
+                    <label class="text-sm font-medium text-gray-700">
+                        Share Code
+                    </label>
+
+                    <input
+                        type="text"
+                        name="share_code"
+                        value="{{ old('share_code') }}"
+                        class="w-full border rounded-lg p-3 mt-1"
+                    >
+
+                </div>
+
+                {{-- EXPIRY DATE --}}
+                <div>
+
+                    <label class="text-sm font-medium text-gray-700">
+                        Expiry Date
+                    </label>
+
+                    <input
+                        type="date"
+                        name="expiry_date"
+                        value="{{ old('expiry_date') }}"
+                        class="w-full border rounded-lg p-3 mt-1"
+                    >
 
                 </div>
 
             </div>
 
-            {{-- BUTTON --}}
+
+            {{-- ==========================================================
+                BUTTON
+            =========================================================== --}}
+
             <div class="mt-8">
 
-                <button class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg">
+                <button
+                    type="submit"
+                    class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg"
+                >
                     Save & Continue
                 </button>
 
             </div>
 
         </form>
+
+
 
         @endif
 
@@ -781,4 +1091,336 @@
 
 </div>
 
+
+<script>
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Elements
+    |--------------------------------------------------------------------------
+    */
+
+    const postcodeInput =
+        document.getElementById('postcode');
+
+    const findPostcodeBtn =
+        document.getElementById('findPostcodeBtn');
+
+    const postcodeInformation =
+        document.getElementById('postcodeInformation');
+
+    const postcodeLocation =
+        document.getElementById('postcodeLocation');
+
+    const postcodeLookupMessage =
+        document.getElementById('postcodeLookupMessage');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Find Postcode
+    |--------------------------------------------------------------------------
+    */
+
+    findPostcodeBtn.addEventListener(
+        'click',
+        lookupPostcode
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Enter Key
+    |--------------------------------------------------------------------------
+    */
+
+    postcodeInput.addEventListener(
+        'keydown',
+        function (event) {
+
+            if (event.key === 'Enter') {
+
+                event.preventDefault();
+
+                lookupPostcode();
+
+            }
+
+        }
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Lookup Postcode
+    |--------------------------------------------------------------------------
+    */
+
+    async function lookupPostcode()
+    {
+        let postcode =
+            postcodeInput.value.trim();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validate Input
+        |--------------------------------------------------------------------------
+        */
+
+        if (!postcode) {
+
+            showMessage(
+                'Please enter your postcode.',
+                'error'
+            );
+
+            postcodeInput.focus();
+
+            return;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Normalise Postcode
+        |--------------------------------------------------------------------------
+        */
+
+        postcode =
+            postcode
+                .toUpperCase()
+                .replace(/\s+/g, ' ');
+
+
+        postcodeInput.value =
+            postcode;
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Loading State
+        |--------------------------------------------------------------------------
+        */
+
+        findPostcodeBtn.disabled = true;
+
+        findPostcodeBtn.innerHTML = `
+            <span class="inline-flex items-center gap-2">
+
+                <svg
+                    class="animate-spin h-4 w-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                >
+
+                    <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                    ></circle>
+
+                    <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4l3-3-3-3v4A10 10 0 002 12h2z"
+                    ></path>
+
+                </svg>
+
+                Checking...
+
+            </span>
+        `;
+
+
+        hideMessage();
+
+        postcodeInformation.classList.add(
+            'hidden'
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | API Request
+        |--------------------------------------------------------------------------
+        */
+
+        try {
+
+            const response = await fetch(
+                `https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                }
+            );
+
+
+            const data =
+                await response.json();
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Invalid Postcode
+            |--------------------------------------------------------------------------
+            */
+
+            if (!response.ok || data.status !== 200) {
+
+                showMessage(
+                    'We could not find this postcode. Please check and try again.',
+                    'error'
+                );
+
+                return;
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Postcode Result
+            |--------------------------------------------------------------------------
+            */
+
+            const result =
+                data.result;
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Location Information
+            |--------------------------------------------------------------------------
+            */
+
+            const locationParts = [
+
+                result.admin_ward,
+
+                result.admin_district,
+
+                result.parliamentary_constituency,
+
+                result.region
+
+            ].filter(function (value) {
+
+                return value &&
+                    value.trim() !== '';
+
+            });
+
+
+            postcodeLocation.textContent =
+                locationParts.join(', ');
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Show Successful Lookup
+            |--------------------------------------------------------------------------
+            */
+
+            postcodeInformation.classList.remove(
+                'hidden'
+            );
+
+
+            showMessage(
+                'Postcode verified successfully.',
+                'success'
+            );
+
+        } catch (error) {
+
+            console.error(
+                'Postcode lookup error:',
+                error
+            );
+
+            showMessage(
+                'Unable to verify the postcode. Please try again.',
+                'error'
+            );
+
+        } finally {
+
+            /*
+            |--------------------------------------------------------------------------
+            | Reset Button
+            |--------------------------------------------------------------------------
+            */
+
+            findPostcodeBtn.disabled = false;
+
+            findPostcodeBtn.textContent =
+                'Find';
+
+        }
+
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Show Message
+    |--------------------------------------------------------------------------
+    */
+
+    function showMessage(
+        message,
+        type
+    )
+    {
+        postcodeLookupMessage.textContent =
+            message;
+
+        postcodeLookupMessage.classList.remove(
+            'hidden',
+            'text-red-600',
+            'text-green-600'
+        );
+
+        if (type === 'error') {
+
+            postcodeLookupMessage.classList.add(
+                'text-red-600'
+            );
+
+        } else {
+
+            postcodeLookupMessage.classList.add(
+                'text-green-600'
+            );
+
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Hide Message
+    |--------------------------------------------------------------------------
+    */
+
+    function hideMessage()
+    {
+        postcodeLookupMessage.classList.add(
+            'hidden'
+        );
+    }
+
+});
+
+</script>
 @endsection

@@ -14,6 +14,7 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\StaffShiftController;
 use App\Http\Controllers\StaffPayrollController;
 use App\Http\Controllers\PayrollController;
+use App\Http\Controllers\StaffProfileController;
 
 
 
@@ -218,6 +219,18 @@ use App\Http\Controllers\PayrollController;
 
         Route::get('/payroll/{payroll}/download', [StaffPayrollController::class, 'download'])
             ->name('payroll.download');
+            
+        /*
+        |--------------------------------------------------------------------------
+        | STAFF PROFILE
+        |--------------------------------------------------------------------------
+        */
+        
+        Route::get('/profile', [StaffProfileController::class, 'index'])
+            ->name('profile.index');
+        
+        Route::put('/profile', [StaffProfileController::class, 'update'])
+            ->name('profile.update');
         
 
     });

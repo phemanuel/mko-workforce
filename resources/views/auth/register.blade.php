@@ -9,7 +9,7 @@
     <!-- LEFT SIDE (same as login) -->
     <div class="hidden md:block w-1/2 relative">
 
-        <img src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d"
+        <img src="{{asset('login/mko-cover.png')}}"
              class="absolute inset-0 w-full h-full object-cover"
              alt="Recruitment">
 
@@ -88,11 +88,11 @@
                 @csrf
 
                 <!-- NAME -->
-                <div class="mb-4">
+                <!-- <div class="mb-4">
                     <label class="text-sm">Full Name</label>
                     <input type="text" name="name"
                            class="w-full mt-2 px-4 py-3 border rounded-lg" required>
-                </div>
+                </div> -->
 
                 <!-- EMAIL -->
                 <div class="mb-4">

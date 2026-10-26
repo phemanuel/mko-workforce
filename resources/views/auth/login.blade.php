@@ -9,7 +9,7 @@
     <!-- LEFT SIDE IMAGE -->
     <div class="hidden md:block w-1/2 relative">
 
-        <img src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d"
+        <img src="{{asset('login/mko-cover.png')}}"
              class="absolute inset-0 w-full h-full object-cover"
              alt="Recruitment">
 

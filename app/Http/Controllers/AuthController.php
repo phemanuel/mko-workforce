@@ -15,6 +15,9 @@ class AuthController extends Controller
 {
     public function home()
     {
+        \Log::info('MKO GROUP TEST', [
+        'time' => now()->toDateTimeString(),
+    ]);
         return view('auth.login');
     }
 
@@ -31,7 +34,7 @@ class AuthController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
+            // 'name' => 'required|string|max:255',
             'phone_no' => 'required|string|max:20',
             'email' => 'required|email',
             'password' => 'required|confirmed|min:6',
@@ -79,11 +82,13 @@ class AuthController extends Controller
         */
 
         $user = User::create([
-            'name' => $request->name,
+            // 'name' => $request->name,
             'phone_no' => $request->phone_no,
             'email' => $request->email,
             'role_id' => 3,
-            'registration_step' => 1,
+            // 'registration_step' => 1, -- original
+            // ---- temporary
+            'registration_step' => 2, 
             'status' => 'pending',
             'password' => Hash::make($request->password),
         ]);
@@ -112,13 +117,21 @@ class AuthController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $user->sendEmailVerificationNotification();
+        // $user->sendEmailVerificationNotification();
 
-        return redirect()->route('email.verify')
+        // return redirect()->route('email.verify')
+        //     ->with(
+        //         'success',
+        //         'Verification email sent successfully. Please check your inbox.'
+        //     );
+
+        return redirect()->route('login')
             ->with(
                 'success',
-                'Verification email sent successfully. Please check your inbox.'
+                'Signup successful, you can now login to complete your registration.'
             );
+
+
     }
 
     public function loginAction(Request $request)

@@ -86,7 +86,9 @@ class ApplicationController extends Controller
         $request->validate([
 
             // Personal Details
-            'full_name' => 'required|string|max:255',
+             'last_name' => 'required|string|max:255',
+            'first_name' => 'required|string|max:255',
+             'middle_name' => 'required|string|max:255',
             'date_of_birth' => 'required|date',
             'gender' => 'required',
             'nationality' => 'required|string|max:255',
@@ -105,6 +107,9 @@ class ApplicationController extends Controller
         ]);
 
         $user = auth()->user();
+        
+        $full_name = $request->last_name . " " . $request->first_name . " " .
+        $request->middle_name;
 
         /*
         |--------------------------------------------------------------------------
@@ -113,7 +118,10 @@ class ApplicationController extends Controller
         */
 
         $user->update([
-            'name' => $request->full_name
+            'name' => $full_name,
+             'first_name' => $request->first_name,
+              'last_name' => $request->last_name,
+               'middle_name' => $request->middle_name
         ]);
 
         /*

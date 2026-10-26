@@ -162,123 +162,236 @@ class EmployeeController extends Controller
 
      public function update(Request $request, Employee $employee)
     {
+        /*
+        |--------------------------------------------------------------------------
+        | VALIDATION
+        |--------------------------------------------------------------------------
+        */
+    
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+    
+            'primary_role' => [
+                'required',
+                'string',
+                'in:SIA Security,Cleaning Services,Companion Support,Back Support Services',
+            ],
+    
+            'employment_type' => 'nullable|in:Full-Time,Part-Time,Casual',
+            'start_date' => 'nullable|date',
+    
+            'phone' => 'nullable|string|max:30',
+            'gender' => 'nullable|in:Male,Female,Other',
+            'date_of_birth' => 'nullable|date',
+            'nationality' => 'nullable|string|max:100',
+            'address' => 'nullable|string|max:2000',
+            'postcode' => 'nullable|string|max:20',
+            'ni_number' => 'nullable|string|max:50',
+    
+            'emergency_contact_name' => 'nullable|string|max:255',
+            'emergency_contact_phone' => 'nullable|string|max:30',
+    
+            'work_status' => 'nullable|in:UK Citizen,BRP,Visa',
+            'share_code' => 'nullable|string|max:100',
+            'expiry_date' => 'nullable|date',
+    
+            'secondary_skills' => 'nullable|array',
+            'secondary_skills.*' => 'string|max:100',
+    
+            'role_detail' => 'sometimes|array',
+            'role_detail.data' => 'sometimes|array',
+            'role_detail.data1' => 'sometimes|array',
+    
+            'bank_name' => 'nullable|string|max:255',
+            'account_number' => 'nullable|string|max:100',
+            'sort_code' => 'nullable|string|max:20',
+            'utr' => 'nullable|string|max:100',
+            'payment_type' => 'nullable|in:PAYE,Self-Employed',
+        ], [
+            'name.required' => 'Please enter the employee\'s full name.',
+            'name.string' => 'The employee name must be valid text.',
+            'name.max' => 'The employee name cannot exceed 255 characters.',
+    
+            'primary_role.required' => 'Please select the employee\'s primary role.',
+            'primary_role.in' => 'Please select a valid primary role.',
+    
+            'employment_type.in' => 'Please select a valid employment type.',
+            'start_date.date' => 'Please enter a valid employment start date.',
+    
+            'gender.in' => 'Please select a valid gender.',
+            'date_of_birth.date' => 'Please enter a valid date of birth.',
+    
+            'expiry_date.date' => 'Please enter a valid eligibility expiry date.',
+    
+            'secondary_skills.array' => 'Please select valid secondary skills.',
+            'secondary_skills.*.string' => 'Each secondary skill must be valid.',
+    
+            'payment_type.in' => 'Please select a valid payment type.',
+        ]);
+    
+        /*
+        |--------------------------------------------------------------------------
+        | DATABASE TRANSACTION
+        |--------------------------------------------------------------------------
+        */
+    
         DB::beginTransaction();
-
+    
         try {
-
+    
             /*
             |--------------------------------------------------------------------------
             | USER UPDATE
             |--------------------------------------------------------------------------
             */
+    
             $employee->user()->update([
-                'name' => $request->name,               
+                'name' => $validated['name'],
             ]);
-
+    
             /*
             |--------------------------------------------------------------------------
             | EMPLOYEE CORE
             |--------------------------------------------------------------------------
             */
+    
             $employee->update([
-                'primary_role' => $request->primary_role,
-                'employment_type' => $request->employment_type,
-                'start_date' => $request->start_date,
+                'primary_role' => $validated['primary_role'],
+                'employment_type' => $validated['employment_type'] ?? null,
+                'start_date' => $validated['start_date'] ?? null,
             ]);
-
+    
             /*
             |--------------------------------------------------------------------------
             | PROFILE
             |--------------------------------------------------------------------------
             */
+    
             $employee->profile()->updateOrCreate(
                 ['employee_id' => $employee->id],
                 [
-                    'phone' => $request->phone,
-                    'gender' => $request->gender,
-                    'date_of_birth' => $request->date_of_birth,
-                    'nationality' => $request->nationality,
-                    'address' => $request->address,
-                    'postcode' => $request->postcode,
-                    'ni_number' => $request->ni_number,
-                    'emergency_contact_name' => $request->emergency_contact_name,
-                    'emergency_contact_phone' => $request->emergency_contact_phone,
+                    'phone' => $validated['phone'] ?? null,
+                    'gender' => $validated['gender'] ?? null,
+                    'date_of_birth' => $validated['date_of_birth'] ?? null,
+                    'nationality' => $validated['nationality'] ?? null,
+                    'address' => $validated['address'] ?? null,
+                    'postcode' => $validated['postcode'] ?? null,
+                    'ni_number' => $validated['ni_number'] ?? null,
+                    'emergency_contact_name' =>
+                        $validated['emergency_contact_name'] ?? null,
+                    'emergency_contact_phone' =>
+                        $validated['emergency_contact_phone'] ?? null,
                 ]
             );
-
+    
             /*
             |--------------------------------------------------------------------------
             | WORK ELIGIBILITY
             |--------------------------------------------------------------------------
             */
+    
             $employee->workEligibility()->updateOrCreate(
                 ['employee_id' => $employee->id],
                 [
-                    'work_status' => $request->work_status,
-                    'share_code' => $request->share_code,
-                    'expiry_date' => $request->expiry_date,
+                    'work_status' => $validated['work_status'] ?? null,
+                    'share_code' => $validated['share_code'] ?? null,
+                    'expiry_date' => $validated['expiry_date'] ?? null,
                 ]
             );
-
+    
             /*
             |--------------------------------------------------------------------------
-            | ROLE DETAILS (JSON)
+            | ROLE DETAILS
             |--------------------------------------------------------------------------
             */
+    
             $employee->roleDetail()->updateOrCreate(
                 ['employee_id' => $employee->id],
                 [
-                    'role_type' => $request->primary_role,
-                    'secondary_skills' => $request->secondary_skills ?? [],
-                    'data' => $request->role_detail['data'] ?? [],
-                    'data1' => $request->role_detail['data1'] ?? [],
+                    // Use the validated primary role.
+                    'role_type' => $validated['primary_role'],
+    
+                    'secondary_skills' =>
+                        $validated['secondary_skills'] ?? [],
+    
+                    'data' =>
+                        $validated['role_detail']['data'] ?? [],
+    
+                    'data1' =>
+                        $validated['role_detail']['data1'] ?? [],
                 ]
             );
-
+    
             /*
             |--------------------------------------------------------------------------
             | PAYROLL
             |--------------------------------------------------------------------------
             */
+    
             $employee->payroll()->updateOrCreate(
                 ['employee_id' => $employee->id],
                 [
-                    'bank_name' => $request->bank_name,
-                    'account_number' => $request->account_number,
-                    'sort_code' => $request->sort_code,
-                    'utr' => $request->utr,
-                    'payment_type' => $request->payment_type,
+                    'bank_name' => $validated['bank_name'] ?? null,
+                    'account_number' => $validated['account_number'] ?? null,
+                    'sort_code' => $validated['sort_code'] ?? null,
+                    'utr' => $validated['utr'] ?? null,
+                    'payment_type' => $validated['payment_type'] ?? null,
                 ]
             );
-
-            DB::commit();
-
+    
+            /*
+            |--------------------------------------------------------------------------
+            | ACTIVITY LOG
+            |--------------------------------------------------------------------------
+            */
+    
             log_activity(
-            'edit_employee_open',
-            'Opened employee edit form',
-            $employee->user->name . ' profile updated by ' . auth()->user()->name
-
-        );
-
+                'edit_employee',
+                'Updated employee profile',
+                $validated['name'] . ' profile updated by '
+                    . auth()->user()->name
+            );
+    
+            /*
+            |--------------------------------------------------------------------------
+            | COMMIT
+            |--------------------------------------------------------------------------
+            */
+    
+            DB::commit();
+    
+            /*
+            |--------------------------------------------------------------------------
+            | SUCCESS RESPONSE
+            |--------------------------------------------------------------------------
+            */
+    
             return response()->json([
                 'success' => true,
-                'message' => 'Employee updated successfully',
+                'message' => 'Employee profile updated successfully.',
+    
                 'employee' => $employee->fresh([
                     'user',
                     'profile',
                     'roleDetail',
                     'payroll',
-                    'workEligibility'
-                ])
+                    'workEligibility',
+                ]),
             ]);
-
-        } catch (\Exception $e) {
-
-            DB::rollBack();
-
+    
+        } catch (\Throwable $e) {
+    
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
+    
+            // Record the technical error for debugging without exposing
+            // database details to the employee-management interface.
+            report($e);
+    
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => 'We could not update this employee. Please try again. If the problem continues, contact your administrator.',
             ], 500);
         }
     }

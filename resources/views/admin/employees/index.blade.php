@@ -144,8 +144,10 @@
 
             </tbody>
 
-        </table>
+            <div>{{$employees->links()}}</div>
 
+        </table>
+<div>{{$employees->links()}}</div>
     </div>
 
 </div>
@@ -450,6 +452,7 @@
                                 <option value="Cleaning Services">Cleaning Services</option>
                                 <option value="Companion Support">Companion Support</option>
                                 <option value="Back Support Services">Back Support Services</option>
+                                <option value="Steward">Steward</option>
 
                             </select>
                     </div>
@@ -1587,91 +1590,414 @@ function closeEditModal()
 | SUBMIT UPDATE
 |--------------------------------------------------------------------------
 */
-document.getElementById('editEmployeeForm')
-.addEventListener('submit', async function (e) {
+/*
+|--------------------------------------------------------------------------
+| EDIT EMPLOYEE VALIDATION HELPERS
+|--------------------------------------------------------------------------
+*/
 
-    e.preventDefault();
+function clearEditValidationErrors() {
 
-    const get = (id) => document.getElementById(id)?.value ?? '';
+    document
+        .querySelectorAll('#editEmployeeForm .edit-validation-error')
+        .forEach(element => element.remove());
 
-    const id = get('edit_employee_id');
+    document
+        .querySelectorAll('#editEmployeeForm .border-red-500')
+        .forEach(element => {
+            element.classList.remove('border-red-500');
+        });
+}
 
-    const payload = {
-        name: get('edit_name'),        
 
-        phone: get('edit_phone'),
-        gender: get('edit_gender'),
-        date_of_birth: get('edit_date_of_birth'),
+/*
+|--------------------------------------------------------------------------
+| DISPLAY VALIDATION ERRORS
+|--------------------------------------------------------------------------
+*/
 
-        primary_role: get('edit_primary_role'),
-        employment_type: get('edit_employment_type'),
-        start_date: get('edit_start_date'),
+function showEditValidationErrors(errors) {
 
-        nationality: get('edit_nationality'),
-        address: get('edit_address'),
-        postcode: get('edit_postcode'),
-        ni_number: get('edit_ni_number'),
+    clearEditValidationErrors();
 
-        emergency_contact_name: get('edit_emergency_name'),
-        emergency_contact_phone: get('edit_emergency_phone'),
+    const fieldMap = {
+        name: 'edit_name',
+        primary_role: 'edit_primary_role',
+        employment_type: 'edit_employment_type',
+        start_date: 'edit_start_date',
 
-        work_status: get('edit_work_status'),
-        share_code: get('edit_share_code'),
-        expiry_date: get('edit_eligibility_expiry'),
+        phone: 'edit_phone',
+        gender: 'edit_gender',
+        date_of_birth: 'edit_date_of_birth',
+        nationality: 'edit_nationality',
+        address: 'edit_address',
+        postcode: 'edit_postcode',
+        ni_number: 'edit_ni_number',
 
-        secondary_skills: Array.from(
-            document.querySelectorAll('input[name="secondary_skills[]"]:checked')
-        ).map(el => el.value),
+        emergency_contact_name: 'edit_emergency_name',
+        emergency_contact_phone: 'edit_emergency_phone',
 
-        bank_name: get('edit_bank_name'),
-        account_number: get('edit_account_number'),
-        sort_code: get('edit_sort_code'),
-        utr: get('edit_utr'),
-        payment_type: get('edit_payment_type'),
+        work_status: 'edit_work_status',
+        share_code: 'edit_share_code',
+        expiry_date: 'edit_eligibility_expiry',
+
+        bank_name: 'edit_bank_name',
+        account_number: 'edit_account_number',
+        sort_code: 'edit_sort_code',
+        utr: 'edit_utr',
+        payment_type: 'edit_payment_type',
     };
 
-    console.log('PAYLOAD:', payload);
+    let firstMessage = null;
 
-    try {
+    Object.entries(errors).forEach(([field, messages]) => {
 
-    const response = await fetch(`/admin/employees/${id}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-        },
-        body: JSON.stringify(payload)
+        const message = Array.isArray(messages)
+            ? messages[0]
+            : messages;
+
+        if (!firstMessage && message) {
+            firstMessage = message;
+        }
+
+        const elementId = fieldMap[field];
+
+        if (!elementId) {
+            return;
+        }
+
+        const input = document.getElementById(elementId);
+
+        if (!input) {
+            return;
+        }
+
+        input.classList.add('border-red-500');
+
+        const errorElement = document.createElement('p');
+
+        errorElement.className =
+            'edit-validation-error text-sm text-red-600 mt-1';
+
+        errorElement.textContent = message;
+
+        input.insertAdjacentElement('afterend', errorElement);
     });
-
-    const data = await response.json();
 
     /*
     |--------------------------------------------------------------------------
-    | SUCCESS
+    | OPEN THE RELEVANT TAB
     |--------------------------------------------------------------------------
     */
-    if (data.success) {
 
-        alert(data.message);
+    if (errors.primary_role) {
 
-        closeEditModal();
+        document
+            .querySelector('.edit-tab[data-tab="employment"]')
+            ?.click();
 
-        location.reload();
+    } else if (
+        errors.bank_name ||
+        errors.account_number ||
+        errors.sort_code ||
+        errors.utr ||
+        errors.payment_type
+    ) {
 
-    } else {
+        document
+            .querySelector('.edit-tab[data-tab="payroll"]')
+            ?.click();
 
-        alert(data.message || 'Update failed');
+    } else if (
+        errors.work_status ||
+        errors.share_code ||
+        errors.expiry_date
+    ) {
 
+        document
+            .querySelector('.edit-tab[data-tab="eligibility"]')
+            ?.click();
     }
 
-} catch (error) {
+    /*
+    |--------------------------------------------------------------------------
+    | FRIENDLY MESSAGE
+    |--------------------------------------------------------------------------
+    */
 
-    console.error(error);
-
-    alert('Something went wrong while updating employee');
-
+    if (firstMessage) {
+        alert(firstMessage);
+    }
 }
+
+
+/*
+|--------------------------------------------------------------------------
+| SUBMIT UPDATE
+|--------------------------------------------------------------------------
+*/
+
+document
+    .getElementById('editEmployeeForm')
+    .addEventListener('submit', async function (e) {
+
+        e.preventDefault();
+
+        clearEditValidationErrors();
+
+        const form = this;
+
+        const submitButton = form.querySelector(
+            'button[type="submit"]'
+        );
+
+        const originalButtonText = submitButton?.textContent;
+
+        const get = (id) =>
+            document.getElementById(id)?.value ?? '';
+
+        const id = get('edit_employee_id');
+
+        /*
+        |--------------------------------------------------------------------------
+        | BASIC CHECKS
+        |--------------------------------------------------------------------------
+        */
+
+        if (!id) {
+            alert('Unable to identify this employee. Please close the modal and try again.');
+            return;
+        }
+
+        const primaryRole = get('edit_primary_role').trim();
+
+        if (!primaryRole) {
+
+            document
+                .querySelector('.edit-tab[data-tab="employment"]')
+                ?.click();
+
+            showEditValidationErrors({
+                primary_role: [
+                    'Please select the employee\'s primary role.'
+                ]
+            });
+
+            return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | REQUEST PAYLOAD
+        |--------------------------------------------------------------------------
+        */
+
+        const payload = {
+
+            name: get('edit_name').trim(),
+
+            phone: get('edit_phone'),
+            gender: get('edit_gender'),
+            date_of_birth: get('edit_date_of_birth'),
+
+            primary_role: primaryRole,
+            employment_type: get('edit_employment_type'),
+            start_date: get('edit_start_date'),
+
+            nationality: get('edit_nationality'),
+            address: get('edit_address'),
+            postcode: get('edit_postcode'),
+            ni_number: get('edit_ni_number'),
+
+            emergency_contact_name: get('edit_emergency_name'),
+            emergency_contact_phone: get('edit_emergency_phone'),
+
+            work_status: get('edit_work_status'),
+            share_code: get('edit_share_code'),
+            expiry_date: get('edit_eligibility_expiry'),
+
+            secondary_skills: Array.from(
+                document.querySelectorAll(
+                    'input[name="secondary_skills[]"]:checked'
+                )
+            ).map(el => el.value),
+
+            bank_name: get('edit_bank_name'),
+            account_number: get('edit_account_number'),
+            sort_code: get('edit_sort_code'),
+            utr: get('edit_utr'),
+            payment_type: get('edit_payment_type'),
+        };
+
+        /*
+        |--------------------------------------------------------------------------
+        | CSRF TOKEN
+        |--------------------------------------------------------------------------
+        */
+
+        const csrfToken = document.querySelector(
+            'meta[name="csrf-token"]'
+        )?.content;
+
+        if (!csrfToken) {
+            alert('Your security token could not be found. Please refresh the page and try again.');
+            return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | LOADING STATE
+        |--------------------------------------------------------------------------
+        */
+
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = 'Saving...';
+            submitButton.classList.add('opacity-60', 'cursor-not-allowed');
+        }
+
+        try {
+
+            /*
+            |--------------------------------------------------------------------------
+            | SEND REQUEST
+            |--------------------------------------------------------------------------
+            */
+
+            const response = await fetch(`/admin/employees/${id}`, {
+
+                method: 'PUT',
+
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+
+                body: JSON.stringify(payload),
+            });
+
+            /*
+            |--------------------------------------------------------------------------
+            | READ RESPONSE SAFELY
+            |--------------------------------------------------------------------------
+            */
+
+            const data = await response.json().catch(() => null);
+
+            /*
+            |--------------------------------------------------------------------------
+            | VALIDATION ERRORS
+            |--------------------------------------------------------------------------
+            */
+
+            if (response.status === 422) {
+
+                showEditValidationErrors(
+                    data?.errors ?? {
+                        general: [
+                            data?.message ||
+                            'Please check the information entered and try again.'
+                        ]
+                    }
+                );
+
+                return;
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | UNAUTHENTICATED / FORBIDDEN
+            |--------------------------------------------------------------------------
+            */
+
+            if (response.status === 401 || response.status === 403) {
+
+                alert(
+                    data?.message ||
+                    'You are not authorised to update this employee. Please refresh the page or contact your administrator.'
+                );
+
+                return;
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | OTHER SERVER ERRORS
+            |--------------------------------------------------------------------------
+            */
+
+            if (!response.ok) {
+
+                alert(
+                    data?.message ||
+                    'We could not update this employee. Please try again.'
+                );
+
+                return;
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | SUCCESS
+            |--------------------------------------------------------------------------
+            */
+
+            if (data?.success) {
+
+                alert(
+                    data.message ||
+                    'Employee profile updated successfully.'
+                );
+
+                closeEditModal();
+
+                location.reload();
+
+                return;
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | UNEXPECTED RESPONSE
+            |--------------------------------------------------------------------------
+            */
+
+            alert(
+                data?.message ||
+                'The employee could not be updated. Please try again.'
+            );
+
+        } catch (error) {
+
+            console.error('Employee update request failed:', error);
+
+            alert(
+                'Unable to communicate with the server. Please check your connection and try again.'
+            );
+
+        } finally {
+
+            /*
+            |--------------------------------------------------------------------------
+            | RESTORE BUTTON
+            |--------------------------------------------------------------------------
+            */
+
+            if (submitButton) {
+
+                submitButton.disabled = false;
+
+                submitButton.textContent =
+                    originalButtonText || 'Save Changes';
+
+                submitButton.classList.remove(
+                    'opacity-60',
+                    'cursor-not-allowed'
+                );
+            }
+        }
+    
 });
 </script>
 
