@@ -1436,94 +1436,144 @@
             </section>
 
 
+            
             {{-- ====================================================
-                 DOCUMENTS
+                DOCUMENTS
             ==================================================== --}}
-            <section class="overflow-hidden rounded-2xl border
-                            border-gray-100 bg-white shadow-sm">
+            <section class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
 
-                <div class="flex items-center gap-3 border-b
-                            border-gray-100 p-5">
-
-                    <div class="flex h-10 w-10 items-center justify-center
-                                rounded-xl bg-indigo-50 text-indigo-600">
-
+                <div class="flex items-center gap-3 border-b border-gray-100 p-5">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
                         <i class="fas fa-folder-open"></i>
-
                     </div>
 
                     <div>
-
-                        <h3 class="font-bold text-gray-900">
-                            My Documents
-                        </h3>
-
+                        <h3 class="font-bold text-gray-900">My Documents</h3>
                         <p class="mt-1 text-xs text-gray-500">
-                            Employee document records
+                            Upload and track your employee documents
                         </p>
-
                     </div>
-
                 </div>
-
 
                 <div class="p-5">
 
-                    @if($employee->documents->isNotEmpty())
+                    @php
+                        $requiredDocumentTypes = [
+                            'Passport',
+                            'NI Proof',
+                            'DBS',
+                            'SIA Licence',
+                            'Certificates',
+                        ];
 
-                        <div class="space-y-3">
+                        $documentsByType = $employee->documents->keyBy('document_type');
+                    @endphp
 
-                            @foreach($employee->documents as $document)
+                    @if(session('success'))
+                        <div class="mb-5 flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+                            <i class="fas fa-check-circle mt-0.5"></i>
+                            <p>{{ session('success') }}</p>
+                        </div>
+                    @endif
 
-                                @php
-                                    $documentName = $document->document_type
-                                        ? \Illuminate\Support\Str::headline($document->document_type)
-                                        : 'Employee Document';
+                    @if(session('error'))
+                        <div class="mb-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                            <i class="fas fa-exclamation-circle mt-0.5"></i>
+                            <p>{{ session('error') }}</p>
+                        </div>
+                    @endif
 
-                                    $documentStatus = strtolower(
-                                        (string) ($document->status ?? 'pending')
-                                    );
+                    @if($errors->any())
+                        <div class="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                            <p class="font-semibold">Please correct the following:</p>
+                            <ul class="mt-2 list-inside list-disc space-y-1">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
 
-                                    $documentStatusClasses = match ($documentStatus) {
-                                        'approved' => 'bg-green-50 text-green-700',
-                                        'rejected' => 'bg-red-50 text-red-700',
-                                        'pending' => 'bg-amber-50 text-amber-700',
-                                        default => 'bg-gray-100 text-gray-600',
-                                    };
-                                @endphp
+                    <div class="space-y-4">
 
-                                <div class="flex items-start gap-3 rounded-xl
-                                            border border-gray-100 p-3">
+                        @foreach($requiredDocumentTypes as $documentType)
 
-                                    <div class="flex h-10 w-10 shrink-0
-                                                items-center justify-center
-                                                rounded-lg bg-gray-100
-                                                text-gray-500">
+                            @php
+                                $document = $documentsByType->get($documentType);
 
-                                        <i class="fas fa-file-alt"></i>
+                                $rawStatus = strtolower(trim((string) (
+                                    $document?->status
+                                    ?: $document?->verification_status
+                                    ?: 'pending'
+                                )));
 
+                                $documentStatus = match ($rawStatus) {
+                                    'approved', 'verified' => 'approved',
+                                    'rejected' => 'rejected',
+                                    default => $document ? 'pending' : 'not_uploaded',
+                                };
+
+                                $statusClasses = match ($documentStatus) {
+                                    'approved' => 'bg-green-50 text-green-700 ring-green-200',
+                                    'rejected' => 'bg-red-50 text-red-700 ring-red-200',
+                                    'pending' => 'bg-amber-50 text-amber-700 ring-amber-200',
+                                    default => 'bg-gray-100 text-gray-600 ring-gray-200',
+                                };
+
+                                $statusLabel = match ($documentStatus) {
+                                    'approved' => 'Approved',
+                                    'rejected' => 'Rejected',
+                                    'pending' => 'Pending review',
+                                    default => 'Not uploaded',
+                                };
+
+                                $canUpload = !$document || in_array(
+                                    $documentStatus,
+                                    ['rejected'],
+                                    true
+                                );
+                            @endphp
+
+                            <div class="rounded-xl border border-gray-100 p-4">
+
+                                <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
+
+                                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl
+                                        {{ $documentStatus === 'approved' ? 'bg-green-50 text-green-600' : '' }}
+                                        {{ $documentStatus === 'rejected' ? 'bg-red-50 text-red-600' : '' }}
+                                        {{ $documentStatus === 'pending' ? 'bg-amber-50 text-amber-600' : '' }}
+                                        {{ $documentStatus === 'not_uploaded' ? 'bg-gray-100 text-gray-500' : '' }}">
+                                        <i class="fas fa-file-alt text-lg"></i>
                                     </div>
 
                                     <div class="min-w-0 flex-1">
 
-                                        <p class="break-words text-sm
-                                                  font-semibold text-gray-800">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <h4 class="text-sm font-bold text-gray-900">
+                                                {{ $documentType }}
+                                            </h4>
 
-                                            {{ $documentName }}
+                                            <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 {{ $statusClasses }}">
+                                                @if($documentStatus === 'approved')
+                                                    <i class="fas fa-check-circle mr-1"></i>
+                                                @elseif($documentStatus === 'rejected')
+                                                    <i class="fas fa-times-circle mr-1"></i>
+                                                @elseif($documentStatus === 'pending')
+                                                    <i class="fas fa-clock mr-1"></i>
+                                                @else
+                                                    <i class="fas fa-upload mr-1"></i>
+                                                @endif
 
-                                        </p>
-
-                                        <div class="mt-2">
-
-                                            <span class="inline-flex rounded-full
-                                                         px-2.5 py-1 text-xs
-                                                         font-semibold
-                                                         {{ $documentStatusClasses }}">
-
-                                                {{ ucfirst($documentStatus) }}
-
+                                                {{ $statusLabel }}
                                             </span>
-                                            
+                                        </div>
+
+                                        @if($document)
+
+                                            <p class="mt-1 text-xs text-gray-500">
+                                                Submitted {{ $document->created_at?->format('d M Y') ?? 'Date unavailable' }}
+                                            </p>
+
                                             @if($document->expiry_date)
                                                 <p class="mt-2 text-xs text-gray-500">
                                                     <i class="fas fa-calendar-alt mr-1"></i>
@@ -1531,55 +1581,136 @@
                                                 </p>
                                             @endif
 
-                                            @if($documentStatus === 'rejected' && $document->rejection_reason)
-                                                <div class="mt-2 rounded-lg border border-red-100 bg-red-50 p-3">
+                                            @if($documentStatus === 'rejected')
+                                                <div class="mt-3 rounded-lg border border-red-100 bg-red-50 p-3">
                                                     <p class="text-xs font-semibold text-red-700">
-                                                        Rejection reason
+                                                        <i class="fas fa-info-circle mr-1"></i>
+                                                        Reason for rejection
                                                     </p>
 
                                                     <p class="mt-1 text-xs leading-5 text-red-600">
-                                                        {{ $document->rejection_reason }}
+                                                        {{ $document->rejection_reason ?: 'Please contact an administrator for further details.' }}
                                                     </p>
                                                 </div>
+                                            @elseif($documentStatus === 'pending')
+                                                <p class="mt-2 text-xs text-amber-700">
+                                                    Your document is awaiting administrator review.
+                                                </p>
+                                            @elseif($documentStatus === 'approved')
+                                                <p class="mt-2 text-xs text-green-700">
+                                                    Your document has been approved.
+                                                </p>
                                             @endif
 
-                                        </div>
+                                        @else
+                                            <p class="mt-1 text-xs text-gray-500">
+                                                You have not uploaded this document yet.
+                                            </p>
+                                        @endif
 
                                     </div>
 
+                                    @if($canUpload)
+                                        <button
+                                            type="button"
+                                            onclick="document.getElementById('upload-document-{{ $loop->index }}').classList.toggle('hidden')"
+                                            class="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700"
+                                        >
+                                            <i class="fas fa-upload"></i>
+                                            {{ $documentStatus === 'rejected' ? 'Upload replacement' : 'Upload document' }}
+                                        </button>
+                                    @endif
+
                                 </div>
 
-                            @endforeach
+                                @if($canUpload)
+                                    <div
+                                        id="upload-document-{{ $loop->index }}"
+                                        class="mt-4 hidden rounded-xl border border-indigo-100 bg-indigo-50/50 p-4"
+                                    >
+                                        <form
+                                            action="{{ route('staff.profile.documents.upload') }}"
+                                            method="POST"
+                                            enctype="multipart/form-data"
+                                            class="space-y-4"
+                                        >
+                                            @csrf
 
-                        </div>
+                                            <input
+                                                type="hidden"
+                                                name="document_type"
+                                                value="{{ $documentType }}"
+                                            >
 
-                    @else
+                                            <div>
+                                                <label class="mb-2 block text-xs font-semibold text-gray-700">
+                                                    Select document
+                                                </label>
 
-                        <div class="py-5 text-center">
+                                                <input
+                                                    type="file"
+                                                    name="document"
+                                                    accept=".jpg,.jpeg,.png,.pdf"
+                                                    required
+                                                    class="block w-full rounded-lg border border-gray-200 bg-white text-sm text-gray-700 file:mr-4 file:border-0 file:bg-gray-100 file:px-4 file:py-2.5 file:text-xs file:font-semibold file:text-gray-700 hover:file:bg-gray-200"
+                                                >
 
-                            <div class="mx-auto flex h-12 w-12 items-center
-                                        justify-center rounded-xl bg-gray-100
-                                        text-gray-400">
+                                                <p class="mt-1 text-xs text-gray-500">
+                                                    JPG, JPEG, PNG or PDF. Maximum size: 2 MB.
+                                                </p>
+                                            </div>
 
-                                <i class="fas fa-file-alt text-lg"></i>
+                                            <div>
+                                                <label class="mb-2 block text-xs font-semibold text-gray-700">
+                                                    Expiry date <span class="font-normal text-gray-400">(optional)</span>
+                                                </label>
+
+                                                <input
+                                                    type="date"
+                                                    name="expiry_date"
+                                                    value="{{ $document?->expiry_date?->format('Y-m-d') }}"
+                                                    min="{{ now()->toDateString() }}"
+                                                    class="block w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                                                >
+                                            </div>
+
+                                            <div class="flex flex-wrap items-center gap-3">
+                                                <button
+                                                    type="submit"
+                                                    class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-indigo-700"
+                                                >
+                                                    <i class="fas fa-cloud-upload-alt"></i>
+                                                    Submit document
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onclick="document.getElementById('upload-document-{{ $loop->index }}').classList.add('hidden')"
+                                                    class="rounded-lg px-3 py-2.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-100"
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </div>
+
+                                        </form>
+                                    </div>
+                                @endif
 
                             </div>
 
-                            <p class="mt-3 text-sm font-semibold text-gray-700">
-                                No documents recorded
-                            </p>
+                        @endforeach
 
-                            <p class="mt-1 text-xs text-gray-500">
-                                Your uploaded employee documents will appear here
-                                when available.
-                            </p>
+                    </div>
 
-                        </div>
-
-                    @endif
+                    <div class="mt-5 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4">
+                        <i class="fas fa-shield-alt mt-0.5 text-blue-600"></i>
+                        <p class="text-xs leading-5 text-blue-700">
+                            Submitted documents are reviewed by an administrator. Rejected documents can be replaced.
+                            Approved documents cannot be replaced here; contact an administrator if an update is required.
+                        </p>
+                    </div>
 
                 </div>
-
             </section>
 
 

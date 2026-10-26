@@ -232,6 +232,9 @@ use App\Http\Controllers\StaffProfileController;
         Route::put('/profile', [StaffProfileController::class, 'update'])
             ->name('profile.update');
         
+        Route::post('/profile/documents', [StaffProfileController::class, 'uploadDocument'])
+            ->name('profile.documents.upload');
+        
 
     });
     

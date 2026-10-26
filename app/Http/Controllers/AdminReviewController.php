@@ -103,7 +103,13 @@ class AdminReviewController extends Controller
     public function approveDocument($id)
     {
         $doc = EmployeeDocument::findOrFail($id);
-        $user = User::where('id', $doc->employee_id)->first();
+        $user = $doc->employee?->user;
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'The employee account associated with this document was not found.',
+            ], 404);
+        }
 
         $doc->update([
             'status' => 'approved',
@@ -129,7 +135,13 @@ class AdminReviewController extends Controller
     {
         
         $doc = EmployeeDocument::findOrFail($id);
-        $user = User::where('id', $doc->employee_id)->first();
+        $user = $doc->employee?->user;
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'The employee account associated with this document was not found.',
+            ], 404);
+        }
 
         $doc->update([
             'status' => 'rejected',
