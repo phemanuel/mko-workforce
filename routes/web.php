@@ -130,6 +130,10 @@ use App\Http\Controllers\StaffProfileController;
         Route::get('/employees/{employee}/edit', [EmployeeController::class, 'edit']);
         Route::put('/employees/{employee}', [EmployeeController::class, 'update']);
 
+        // Employee document uploads
+        Route::post('/employees/{employee}/documents',[EmployeeController::class, 'uploadDocument'])
+            ->name('admin.employees.documents.upload');
+
         Route::get('/employees-export/csv', [EmployeeController::class, 'exportCsv']);
 
         //-------Shift routes
@@ -234,6 +238,15 @@ use App\Http\Controllers\StaffProfileController;
         
         Route::post('/profile/documents', [StaffProfileController::class, 'uploadDocument'])
             ->name('profile.documents.upload');
+
+        /*
+        |--------------------------------------------------------------------------
+        | STAFF PAYROLL INFORMATION
+        |--------------------------------------------------------------------------
+        */
+
+        Route::put('/payroll-information', [StaffProfileController::class, 'updatePayrollInformation'])
+            ->name('payroll-information.update');
         
 
     });

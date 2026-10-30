@@ -1307,128 +1307,350 @@
             </section>
 
 
+           
             {{-- ====================================================
-                 PAYROLL INFORMATION
+                PAYROLL INFORMATION
             ==================================================== --}}
-            <section class="overflow-hidden rounded-2xl border
-                            border-gray-100 bg-white shadow-sm">
 
-                <div class="flex items-center gap-3 border-b
-                            border-gray-100 p-5">
+            <section class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
 
-                    <div class="flex h-10 w-10 items-center justify-center
-                                rounded-xl bg-emerald-50 text-emerald-600">
+                {{-- SUCCESS MESSAGE --}}
+                @if (session('success'))
+                    <div class="mx-5 mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                        <div class="flex items-start gap-2">
+                            <i class="fas fa-check-circle mt-0.5"></i>
+                            <span>{{ session('success') }}</span>
+                        </div>
+                    </div>
+                @endif
 
-                        <i class="fas fa-wallet"></i>
+                {{-- VALIDATION ERRORS --}}
+                @if ($errors->any())
+                    <div class="mx-5 mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        <div class="flex items-start gap-2">
+                            <i class="fas fa-exclamation-circle mt-0.5"></i>
+
+                            <div>
+                                <p class="font-semibold">Please correct the following:</p>
+
+                                <ul class="mt-2 list-inside list-disc space-y-1">
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+
+                {{-- ====================================================
+                    EDIT PAYMENT INFORMATION
+                ==================================================== --}}
+
+                <details
+                    class="group"
+                    @if ($errors->hasAny([
+                        'payment_type',
+                        'bank_name',
+                        'account_number',
+                        'sort_code',
+                        'utr'
+                    ]))
+                        open
+                    @endif
+                >
+                    {{-- SUMMARY / CLICKABLE HEADER --}}
+                    <summary class="flex cursor-pointer list-none items-center gap-3 border-b border-gray-100 p-5">
+
+                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                            <i class="fas fa-wallet"></i>
+                        </span>
+
+                        <span class="min-w-0 flex-1">
+                            <span class="block font-bold text-gray-900">
+                                Payroll Information
+                            </span>
+
+                            <span class="mt-1 block text-xs text-gray-500">
+                                Payment and banking details
+                            </span>
+                        </span>
+
+                        <span class="flex shrink-0 items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700">
+                            <i class="fas fa-edit"></i>
+                            <span>Edit Information</span>
+                            <i class="fas fa-chevron-down text-xs transition-transform group-open:rotate-180"></i>
+                        </span>
+
+                        <i class="fas fa-lock text-sm text-gray-400" title="Sensitive information"></i>
+
+                    </summary>
+
+                        <i class="fas fa-lock text-sm text-gray-400" title="Sensitive information"></i>                  
+
+
+                    {{-- EDIT FORM --}}
+                    <div class="border-b border-gray-100 bg-gray-50/50 p-5">
+
+                        <form
+                            id="payrollInformationForm"
+                            method="POST"
+                            action="{{ route('staff.payroll-information.update') }}"
+                            class="space-y-5"
+                        >
+                            @csrf
+                            @method('PUT')
+
+
+                            {{-- PAYMENT TYPE --}}
+                            <div>
+                                <label
+                                    for="payroll_payment_type"
+                                    class="mb-2 block text-sm font-semibold text-gray-700"
+                                >
+                                    Payment Type
+                                    <span class="text-red-500">*</span>
+                                </label>
+
+                                <select
+                                     id="paymentType"
+                                    name="payment_type"
+                                    class="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                                    required
+                                >
+                                    <option value="">Select payment type</option>
+
+                                    <option
+                                        value="PAYE"
+                                        @selected(old('payment_type', $payroll?->payment_type) === 'PAYE')
+                                    >
+                                        PAYE
+                                    </option>
+
+                                    <option
+                                        value="Self-Employed"
+                                        @selected(old('payment_type', $payroll?->payment_type) === 'Self-Employed')
+                                    >
+                                        Self-Employed
+                                    </option>
+
+                                    <option
+                                        value="Contractor"
+                                        @selected(old('payment_type', $payroll?->payment_type) === 'Contractor')
+                                    >
+                                        Contractor
+                                    </option>
+                                </select>
+
+                                <p class="mt-1 text-xs text-gray-500">
+                                    Select the payment arrangement that applies to you.
+                                </p>
+                            </div>
+
+
+                            {{-- BANK NAME --}}
+                            <div>
+                                <label
+                                    for="payroll_bank_name"
+                                    class="mb-2 block text-sm font-semibold text-gray-700"
+                                >
+                                    Bank Name
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="payroll_bank_name"
+                                    name="bank_name"
+                                    value="{{ old('bank_name', $payroll?->bank_name) }}"
+                                    maxlength="255"
+                                    autocomplete="off"
+                                    class="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                                    placeholder="Enter your bank name"
+                                >
+                            </div>
+
+
+                            {{-- ACCOUNT NUMBER --}}
+                            <div>
+                                <label
+                                    for="payroll_account_number"
+                                    class="mb-2 block text-sm font-semibold text-gray-700"
+                                >
+                                    Account Number
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="payroll_account_number"
+                                    name="account_number"
+                                    value="{{ old('account_number') }}"
+                                    maxlength="50"
+                                    inputmode="numeric"
+                                    autocomplete="off"
+                                    class="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 font-mono text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                                    placeholder="Enter your account number"
+                                >
+
+                                <p class="mt-1 text-xs text-gray-500">
+                                    Leave blank if you do not want to change your saved account number.
+                                </p>
+                            </div>
+
+
+                            {{-- SORT CODE --}}
+                            <div>
+                                <label
+                                    for="payroll_sort_code"
+                                    class="mb-2 block text-sm font-semibold text-gray-700"
+                                >
+                                    Sort Code
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="payroll_sort_code"
+                                    name="sort_code"
+                                    value="{{ old('sort_code') }}"
+                                    maxlength="20"
+                                    autocomplete="off"
+                                    class="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 font-mono text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                                    placeholder="Enter your sort code"
+                                >
+
+                                <p class="mt-1 text-xs text-gray-500">
+                                    Leave blank if you do not want to change your saved sort code.
+                                </p>
+                            </div>
+
+
+                            {{-- UTR: ONLY FOR SELF-EMPLOYED --}}
+                            <div id="utrField"
+                                class="{{ old('payment_type', $payroll?->payment_type) === 'Self-Employed' ? '' : 'hidden' }}">
+
+                                <label for="utr" class="mb-2 block text-sm font-medium text-gray-700">
+                                    Unique Taxpayer Reference (UTR)
+                                    <span class="text-red-500">*</span>
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="utr"
+                                    id="utr"
+                                    value="{{ old('utr') }}"
+                                    maxlength="10"
+                                    pattern="[0-9]{10}"
+                                    placeholder="Enter your 10-digit UTR"
+                                    class="..."
+                                >
+
+                                <p class="mt-1 text-xs text-gray-500">
+                                    Required for self-employed payment. Leave blank to retain your existing UTR.
+                                </p>
+
+                                @error('utr')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+
+                            {{-- ACTIONS --}}
+                            <div class="flex flex-wrap justify-end gap-3 border-t border-gray-100 pt-5">
+
+                                <a
+                                    href="{{ route('staff.profile.index') }}"
+                                    class="inline-flex items-center rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                                >
+                                    Cancel
+                                </a>
+
+                                <button
+                                    type="submit"
+                                    id="savePayrollInformationButton"
+                                    class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                                >
+                                    <i class="fas fa-save"></i>
+                                    <span>Save Changes</span>
+                                </button>
+
+                            </div>
+
+                        </form>
 
                     </div>
 
-                    <div class="flex-1">
-
-                        <h3 class="font-bold text-gray-900">
-                            Payroll Information
-                        </h3>
-
-                        <p class="mt-1 text-xs text-gray-500">
-                            Payment and banking details
-                        </p>
-
-                    </div>
-
-                    <i class="fas fa-lock text-sm text-gray-400"
-                       title="Sensitive information"></i>
-
-                </div>
+                </details>
 
 
-                <div class="space-y-5 p-5">
+                {{-- ====================================================
+                    READ-ONLY PAYMENT INFORMATION
+                ==================================================== --}}
 
+                <div
+                    id="payrollInformationDisplay"
+                    class="space-y-5 p-5"
+                >
+
+                    {{-- BANK NAME --}}
                     <div>
-
-                        <p class="text-sm text-gray-500">
-                            Bank Name
-                        </p>
+                        <p class="text-sm text-gray-500">Bank Name</p>
 
                         <p class="mt-2 font-semibold text-gray-900">
                             {{ $payroll?->bank_name ?: 'Not provided' }}
                         </p>
-
                     </div>
 
 
+                    {{-- ACCOUNT NUMBER --}}
                     <div>
+                        <p class="text-sm text-gray-500">Account Number</p>
 
-                        <p class="text-sm text-gray-500">
-                            Account Number
-                        </p>
-
-                        <p class="mt-2 break-all font-mono text-sm
-                                  font-semibold text-gray-900">
-
+                        <p class="mt-2 break-all font-mono text-sm font-semibold text-gray-900">
                             {{ $maskValue($accountNumber, 4) }}
-
                         </p>
-
                     </div>
 
 
+                    {{-- SORT CODE --}}
                     <div>
+                        <p class="text-sm text-gray-500">Sort Code</p>
 
-                        <p class="text-sm text-gray-500">
-                            Sort Code
-                        </p>
-
-                        <p class="mt-2 font-mono text-sm
-                                  font-semibold text-gray-900">
-
+                        <p class="mt-2 font-mono text-sm font-semibold text-gray-900">
                             {{ $maskValue($sortCode, 2) }}
-
                         </p>
-
                     </div>
 
 
+                    {{-- UTR: ONLY FOR SELF-EMPLOYED --}}
+                    @if (strtolower(trim($payroll?->payment_type ?? '')) === 'self-employed')
+                        <div>
+                            <p class="text-sm text-gray-500">UTR</p>
+
+                            <p class="mt-2 break-all font-mono text-sm font-semibold text-gray-900">
+                                {{ $maskValue($utr, 3) }}
+                            </p>
+                        </div>
+                    @endif
+
+
+                    {{-- PAYMENT TYPE --}}
                     <div>
-
-                        <p class="text-sm text-gray-500">
-                            UTR
-                        </p>
-
-                        <p class="mt-2 break-all font-mono text-sm
-                                  font-semibold text-gray-900">
-
-                            {{ $maskValue($utr, 3) }}
-
-                        </p>
-
-                    </div>
-
-
-                    <div>
-
-                        <p class="text-sm text-gray-500">
-                            Payment Type
-                        </p>
+                        <p class="text-sm text-gray-500">Payment Type</p>
 
                         <p class="mt-2 font-semibold text-gray-900">
                             {{ $payroll?->payment_type ?: 'Not specified' }}
                         </p>
-
                     </div>
 
 
-                    <div class="rounded-xl border border-gray-200
-                                bg-gray-50 p-3">
-
+                    {{-- SECURITY NOTICE --}}
+                    <div class="rounded-xl border border-gray-200 bg-gray-50 p-3">
                         <p class="text-xs leading-5 text-gray-600">
-
                             <i class="fas fa-shield-alt mr-1"></i>
 
-                            Banking information is protected. To change your
-                            payment details, contact your administrator.
-
+                            Your payment information is sensitive. Only update it
+                            with accurate banking and payment details.
                         </p>
-
                     </div>
 
                 </div>
@@ -1436,12 +1658,15 @@
             </section>
 
 
-            
+         
+           
             {{-- ====================================================
                 DOCUMENTS
             ==================================================== --}}
+
             <section class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
 
+                {{-- Section Header --}}
                 <div class="flex items-center gap-3 border-b border-gray-100 p-5">
                     <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
                         <i class="fas fa-folder-open"></i>
@@ -1450,7 +1675,7 @@
                     <div>
                         <h3 class="font-bold text-gray-900">My Documents</h3>
                         <p class="mt-1 text-xs text-gray-500">
-                            Upload and track your employee documents
+                            Upload and track your employee documents and certifications.
                         </p>
                     </div>
                 </div>
@@ -1463,12 +1688,85 @@
                             'NI Proof',
                             'DBS',
                             'SIA Licence',
-                            'Certificates',
+                            'Other Certification',
                         ];
 
-                        $documentsByType = $employee->documents->keyBy('document_type');
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Group employee documents by type
+                        |--------------------------------------------------------------------------
+                        | Existing "Certificates" records are displayed as "Other Certification".
+                        | No database records are changed by this display mapping.
+                        */
+
+                        $employeeDocuments = $employee->documents->map(function ($document) {
+                            if ($document->document_type === 'Certificates') {
+                                $document->document_type = 'Other Certification';
+                            }
+
+                            return $document;
+                        })->groupBy('document_type');
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Resolve status consistently
+                        |--------------------------------------------------------------------------
+                        | Supports both the newer status column and the legacy
+                        | verification_status column.
+                        */
+
+                        $resolveDocumentStatus = function ($document) {
+                            if (!$document) {
+                                return 'not_uploaded';
+                            }
+
+                            $status = strtolower(trim((string) $document->status));
+                            $verificationStatus = strtolower(
+                                trim((string) $document->verification_status)
+                            );
+
+                            if (in_array($status, ['approved', 'verified'], true)) {
+                                return 'approved';
+                            }
+
+                            if (in_array($status, ['rejected'], true)) {
+                                return 'rejected';
+                            }
+
+                            if (in_array($verificationStatus, ['verified', 'approved'], true)) {
+                                return 'approved';
+                            }
+
+                            if ($verificationStatus === 'rejected') {
+                                return 'rejected';
+                            }
+
+                            return 'pending';
+                        };
+
+                        $documentStatusClasses = [
+                            'approved' => 'bg-green-50 text-green-700 ring-green-200',
+                            'rejected' => 'bg-red-50 text-red-700 ring-red-200',
+                            'pending' => 'bg-amber-50 text-amber-700 ring-amber-200',
+                            'not_uploaded' => 'bg-gray-100 text-gray-600 ring-gray-200',
+                        ];
+
+                        $documentStatusLabels = [
+                            'approved' => 'Approved',
+                            'rejected' => 'Rejected',
+                            'pending' => 'Pending review',
+                            'not_uploaded' => 'Not uploaded',
+                        ];
+
+                        $documentStatusIcons = [
+                            'approved' => 'fas fa-check-circle',
+                            'rejected' => 'fas fa-times-circle',
+                            'pending' => 'fas fa-clock',
+                            'not_uploaded' => 'fas fa-upload',
+                        ];
                     @endphp
 
+                    {{-- Success Message --}}
                     @if(session('success'))
                         <div class="mb-5 flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
                             <i class="fas fa-check-circle mt-0.5"></i>
@@ -1476,6 +1774,7 @@
                         </div>
                     @endif
 
+                    {{-- Error Message --}}
                     @if(session('error'))
                         <div class="mb-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                             <i class="fas fa-exclamation-circle mt-0.5"></i>
@@ -1483,9 +1782,11 @@
                         </div>
                     @endif
 
+                    {{-- Validation Errors --}}
                     @if($errors->any())
                         <div class="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                             <p class="font-semibold">Please correct the following:</p>
+
                             <ul class="mt-2 list-inside list-disc space-y-1">
                                 @foreach($errors->all() as $error)
                                     <li>{{ $error }}</li>
@@ -1499,43 +1800,91 @@
                         @foreach($requiredDocumentTypes as $documentType)
 
                             @php
-                                $document = $documentsByType->get($documentType);
+                                $isCertification = $documentType === 'Other Certification';
 
-                                $rawStatus = strtolower(trim((string) (
-                                    $document?->status
-                                    ?: $document?->verification_status
-                                    ?: 'pending'
-                                )));
-
-                                $documentStatus = match ($rawStatus) {
-                                    'approved', 'verified' => 'approved',
-                                    'rejected' => 'rejected',
-                                    default => $document ? 'pending' : 'not_uploaded',
-                                };
-
-                                $statusClasses = match ($documentStatus) {
-                                    'approved' => 'bg-green-50 text-green-700 ring-green-200',
-                                    'rejected' => 'bg-red-50 text-red-700 ring-red-200',
-                                    'pending' => 'bg-amber-50 text-amber-700 ring-amber-200',
-                                    default => 'bg-gray-100 text-gray-600 ring-gray-200',
-                                };
-
-                                $statusLabel = match ($documentStatus) {
-                                    'approved' => 'Approved',
-                                    'rejected' => 'Rejected',
-                                    'pending' => 'Pending review',
-                                    default => 'Not uploaded',
-                                };
-
-                                $canUpload = !$document || in_array(
-                                    $documentStatus,
-                                    ['rejected'],
-                                    true
+                                $documentsForType = $employeeDocuments->get(
+                                    $documentType,
+                                    collect()
                                 );
+
+                                /*
+                                |--------------------------------------------------------------------------
+                                | Standard document status
+                                |--------------------------------------------------------------------------
+                                | Standard types use one document record.
+                                */
+
+                                $document = $isCertification
+                                    ? null
+                                    : $documentsForType->first();
+
+                                $documentStatus = $resolveDocumentStatus($document);
+
+                                /*
+                                |--------------------------------------------------------------------------
+                                | Certification summary
+                                |--------------------------------------------------------------------------
+                                | Certifications can have several records with independent statuses.
+                                */
+
+                                $certificationStatuses = $isCertification
+                                    ? $documentsForType->map(
+                                        fn ($certification) => $resolveDocumentStatus($certification)
+                                    )
+                                    : collect();
+
+                                $certificationCount = $documentsForType->count();
+
+                                $approvedCertifications = $certificationStatuses
+                                    ->filter(fn ($status) => $status === 'approved')
+                                    ->count();
+
+                                $pendingCertifications = $certificationStatuses
+                                    ->filter(fn ($status) => $status === 'pending')
+                                    ->count();
+
+                                $rejectedCertifications = $certificationStatuses
+                                    ->filter(fn ($status) => $status === 'rejected')
+                                    ->count();
+
+                                if ($isCertification) {
+                                    if ($certificationCount === 0) {
+                                        $documentStatus = 'not_uploaded';
+                                        $statusLabel = 'Not uploaded';
+                                    } elseif ($pendingCertifications > 0) {
+                                        $documentStatus = 'pending';
+                                        $statusLabel = $pendingCertifications . ' pending review';
+                                    } elseif ($rejectedCertifications > 0) {
+                                        $documentStatus = 'rejected';
+                                        $statusLabel = $rejectedCertifications . ' rejected';
+                                    } else {
+                                        $documentStatus = 'approved';
+                                        $statusLabel = 'All approved';
+                                    }
+                                } else {
+                                    $statusLabel = $documentStatusLabels[$documentStatus];
+                                }
+
+                                $statusClasses = $documentStatusClasses[$documentStatus];
+
+                                /*
+                                |--------------------------------------------------------------------------
+                                | Upload rules
+                                |--------------------------------------------------------------------------
+                                | Certifications can always receive additional uploads.
+                                | Standard documents can be uploaded if missing or rejected.
+                                */
+
+                                $canUpload = $isCertification
+                                    || !$document
+                                    || $documentStatus === 'rejected';
+
+                                $uploadFormId = 'upload-document-' . $loop->index;
                             @endphp
 
                             <div class="rounded-xl border border-gray-100 p-4">
 
+                                {{-- Document Heading --}}
                                 <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
 
                                     <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl
@@ -1543,97 +1892,177 @@
                                         {{ $documentStatus === 'rejected' ? 'bg-red-50 text-red-600' : '' }}
                                         {{ $documentStatus === 'pending' ? 'bg-amber-50 text-amber-600' : '' }}
                                         {{ $documentStatus === 'not_uploaded' ? 'bg-gray-100 text-gray-500' : '' }}">
+
                                         <i class="fas fa-file-alt text-lg"></i>
                                     </div>
 
                                     <div class="min-w-0 flex-1">
 
                                         <div class="flex flex-wrap items-center gap-2">
+
                                             <h4 class="text-sm font-bold text-gray-900">
                                                 {{ $documentType }}
                                             </h4>
 
                                             <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 {{ $statusClasses }}">
-                                                @if($documentStatus === 'approved')
-                                                    <i class="fas fa-check-circle mr-1"></i>
-                                                @elseif($documentStatus === 'rejected')
-                                                    <i class="fas fa-times-circle mr-1"></i>
-                                                @elseif($documentStatus === 'pending')
-                                                    <i class="fas fa-clock mr-1"></i>
-                                                @else
-                                                    <i class="fas fa-upload mr-1"></i>
-                                                @endif
-
+                                                <i class="{{ $documentStatusIcons[$documentStatus] }} mr-1"></i>
                                                 {{ $statusLabel }}
                                             </span>
+
+                                            @if($isCertification && $certificationCount > 0)
+                                                <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+                                                    {{ $certificationCount }}
+                                                    {{ \Illuminate\Support\Str::plural('file', $certificationCount) }}
+                                                </span>
+                                            @endif
+
                                         </div>
 
-                                        @if($document)
+                                        @if($isCertification)
 
-                                            <p class="mt-1 text-xs text-gray-500">
-                                                Submitted {{ $document->created_at?->format('d M Y') ?? 'Date unavailable' }}
+                                            <p class="mt-2 text-xs leading-5 text-gray-500">
+                                                Upload additional professional qualifications, training certificates,
+                                                and other relevant certifications. Each file is reviewed separately.
                                             </p>
-
-                                            @if($document->expiry_date)
-                                                <p class="mt-2 text-xs text-gray-500">
-                                                    <i class="fas fa-calendar-alt mr-1"></i>
-                                                    Expires {{ \Carbon\Carbon::parse($document->expiry_date)->format('d M Y') }}
-                                                </p>
-                                            @endif
-
-                                            @if($documentStatus === 'rejected')
-                                                <div class="mt-3 rounded-lg border border-red-100 bg-red-50 p-3">
-                                                    <p class="text-xs font-semibold text-red-700">
-                                                        <i class="fas fa-info-circle mr-1"></i>
-                                                        Reason for rejection
-                                                    </p>
-
-                                                    <p class="mt-1 text-xs leading-5 text-red-600">
-                                                        {{ $document->rejection_reason ?: 'Please contact an administrator for further details.' }}
-                                                    </p>
-                                                </div>
-                                            @elseif($documentStatus === 'pending')
-                                                <p class="mt-2 text-xs text-amber-700">
-                                                    Your document is awaiting administrator review.
-                                                </p>
-                                            @elseif($documentStatus === 'approved')
-                                                <p class="mt-2 text-xs text-green-700">
-                                                    Your document has been approved.
-                                                </p>
-                                            @endif
 
                                         @else
-                                            <p class="mt-1 text-xs text-gray-500">
-                                                You have not uploaded this document yet.
-                                            </p>
+
+                                            @if($document)
+                                                <div class="mt-2 space-y-1">
+
+                                                    <p class="break-all text-xs text-gray-500">
+                                                        <i class="fas fa-paperclip mr-1"></i>
+                                                        {{ basename($document->file_path) }}
+                                                    </p>
+
+                                                    @if($document->expiry_date)
+                                                        <p class="text-xs text-gray-500">
+                                                            <i class="fas fa-calendar-alt mr-1"></i>
+                                                            Expiry:
+                                                            {{ \Illuminate\Support\Carbon::parse($document->expiry_date)->format('d M Y') }}
+                                                        </p>
+                                                    @endif
+
+                                                    @if($documentStatus === 'rejected')
+                                                        <div class="mt-2 rounded-lg bg-red-50 p-3 text-xs text-red-700">
+                                                            <p class="font-semibold">Reason for rejection</p>
+
+                                                            <p class="mt-1">
+                                                                {{ $document->rejection_reason ?: 'This document was rejected. Please upload a replacement.' }}
+                                                            </p>
+                                                        </div>
+                                                    @endif
+
+                                                </div>
+                                            @else
+                                                <p class="mt-2 text-xs leading-5 text-gray-500">
+                                                    No document has been uploaded for this category yet.
+                                                </p>
+                                            @endif
+
                                         @endif
 
                                     </div>
 
+                                    {{-- Upload Button --}}
                                     @if($canUpload)
                                         <button
                                             type="button"
-                                            onclick="document.getElementById('upload-document-{{ $loop->index }}').classList.toggle('hidden')"
+                                            onclick="document.getElementById('{{ $uploadFormId }}').classList.toggle('hidden')"
+                                            aria-controls="{{ $uploadFormId }}"
+                                            aria-expanded="false"
                                             class="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700"
                                         >
                                             <i class="fas fa-upload"></i>
-                                            {{ $documentStatus === 'rejected' ? 'Upload replacement' : 'Upload document' }}
+
+                                            @if($isCertification)
+                                                Add certification
+                                            @elseif($documentStatus === 'rejected')
+                                                Upload replacement
+                                            @else
+                                                Upload document
+                                            @endif
                                         </button>
                                     @endif
 
                                 </div>
 
+                                {{-- Existing Certification Records --}}
+                                @if($isCertification && $documentsForType->isNotEmpty())
+
+                                    <div class="mt-4 space-y-3">
+
+                                        @foreach($documentsForType as $certification)
+
+                                            @php
+                                                $certificationStatus = $resolveDocumentStatus($certification);
+
+                                                $certificationStatusClasses = $documentStatusClasses[$certificationStatus];
+
+                                                $expiryDate = $certification->expiry_date
+                                                    ? \Illuminate\Support\Carbon::parse($certification->expiry_date)->format('d M Y')
+                                                    : null;
+                                            @endphp
+
+                                            <div class="rounded-xl border border-gray-200 bg-gray-50/50 p-4">
+
+                                                <div class="flex flex-wrap items-start justify-between gap-3">
+
+                                                    <div class="min-w-0 flex-1">
+
+                                                        <p class="break-all text-sm font-semibold text-gray-900">
+                                                            <i class="fas fa-file-alt mr-1 text-gray-400"></i>
+                                                            {{ basename($certification->file_path) }}
+                                                        </p>
+
+                                                        @if($expiryDate)
+                                                            <p class="mt-1 text-xs text-gray-500">
+                                                                Expiry: {{ $expiryDate }}
+                                                            </p>
+                                                        @endif
+
+                                                    </div>
+
+                                                    <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 {{ $certificationStatusClasses }}">
+                                                        <i class="{{ $documentStatusIcons[$certificationStatus] }} mr-1"></i>
+                                                        {{ $documentStatusLabels[$certificationStatus] }}
+                                                    </span>
+
+                                                </div>
+
+                                                @if($certificationStatus === 'rejected')
+                                                    <div class="mt-3 rounded-lg border border-red-100 bg-red-50 p-3 text-xs text-red-700">
+                                                        <p class="font-semibold">Reason for rejection</p>
+
+                                                        <p class="mt-1">
+                                                            {{ $certification->rejection_reason ?: 'This certification was rejected.' }}
+                                                        </p>
+                                                    </div>
+                                                @endif
+
+                                            </div>
+
+                                        @endforeach
+
+                                    </div>
+
+                                @endif
+
+                                {{-- Upload Form --}}
                                 @if($canUpload)
+
                                     <div
-                                        id="upload-document-{{ $loop->index }}"
+                                        id="{{ $uploadFormId }}"
                                         class="mt-4 hidden rounded-xl border border-indigo-100 bg-indigo-50/50 p-4"
                                     >
+
                                         <form
                                             action="{{ route('staff.profile.documents.upload') }}"
                                             method="POST"
                                             enctype="multipart/form-data"
                                             class="space-y-4"
                                         >
+
                                             @csrf
 
                                             <input
@@ -1642,58 +2071,98 @@
                                                 value="{{ $documentType }}"
                                             >
 
+                                            {{-- File Input --}}
                                             <div>
+
                                                 <label class="mb-2 block text-xs font-semibold text-gray-700">
-                                                    Select document
+                                                    {{ $isCertification ? 'Select certification files' : 'Select document' }}
                                                 </label>
 
-                                                <input
-                                                    type="file"
-                                                    name="document"
-                                                    accept=".jpg,.jpeg,.png,.pdf"
-                                                    required
-                                                    class="block w-full rounded-lg border border-gray-200 bg-white text-sm text-gray-700 file:mr-4 file:border-0 file:bg-gray-100 file:px-4 file:py-2.5 file:text-xs file:font-semibold file:text-gray-700 hover:file:bg-gray-200"
-                                                >
+                                                @if($isCertification)
 
-                                                <p class="mt-1 text-xs text-gray-500">
-                                                    JPG, JPEG, PNG or PDF. Maximum size: 2 MB.
-                                                </p>
+                                                    <input
+                                                        type="file"
+                                                        name="documents[]"
+                                                        multiple
+                                                        required
+                                                        accept=".jpg,.jpeg,.png,.pdf"
+                                                        class="block w-full rounded-lg border border-gray-200 bg-white text-sm text-gray-700 file:mr-4 file:border-0 file:bg-gray-100 file:px-4 file:py-2.5 file:text-xs file:font-semibold file:text-gray-700 hover:file:bg-gray-200"
+                                                    >
+
+                                                    <p class="mt-1 text-xs text-gray-500">
+                                                        Select up to 10 files per submission.
+                                                        JPG, JPEG, PNG or PDF. Maximum size: 2 MB per file.
+                                                    </p>
+
+                                                @else
+
+                                                    <input
+                                                        type="file"
+                                                        name="document"
+                                                        required
+                                                        accept=".jpg,.jpeg,.png,.pdf"
+                                                        class="block w-full rounded-lg border border-gray-200 bg-white text-sm text-gray-700 file:mr-4 file:border-0 file:bg-gray-100 file:px-4 file:py-2.5 file:text-xs file:font-semibold file:text-gray-700 hover:file:bg-gray-200"
+                                                    >
+
+                                                    <p class="mt-1 text-xs text-gray-500">
+                                                        JPG, JPEG, PNG or PDF. Maximum size: 2 MB.
+                                                    </p>
+
+                                                @endif
+
                                             </div>
 
+                                            {{-- Expiry Date --}}
+                                           
                                             <div>
+
                                                 <label class="mb-2 block text-xs font-semibold text-gray-700">
-                                                    Expiry date <span class="font-normal text-gray-400">(optional)</span>
+                                                    Expiry date
+                                                    <span class="font-normal text-gray-400">(optional)</span>
                                                 </label>
 
                                                 <input
                                                     type="date"
                                                     name="expiry_date"
-                                                    value="{{ $document?->expiry_date?->format('Y-m-d') }}"
+                                                    value="{{ old('expiry_date') }}"
                                                     min="{{ now()->toDateString() }}"
                                                     class="block w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
                                                 >
+
+                                                @if($isCertification)
+                                                    <p class="mt-1 text-xs text-gray-500">
+                                                        This expiry date applies to every file in this submission.
+                                                    </p>
+                                                @endif
+
                                             </div>
 
+                                            {{-- Actions --}}
                                             <div class="flex flex-wrap items-center gap-3">
+
                                                 <button
                                                     type="submit"
                                                     class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-indigo-700"
                                                 >
                                                     <i class="fas fa-cloud-upload-alt"></i>
-                                                    Submit document
+
+                                                    {{ $isCertification ? 'Upload certifications' : 'Submit document' }}
                                                 </button>
 
                                                 <button
                                                     type="button"
-                                                    onclick="document.getElementById('upload-document-{{ $loop->index }}').classList.add('hidden')"
+                                                    onclick="document.getElementById('{{ $uploadFormId }}').classList.add('hidden')"
                                                     class="rounded-lg px-3 py-2.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-100"
                                                 >
                                                     Cancel
                                                 </button>
+
                                             </div>
 
                                         </form>
+
                                     </div>
+
                                 @endif
 
                             </div>
@@ -1702,16 +2171,22 @@
 
                     </div>
 
+                    {{-- Information Notice --}}
                     <div class="mt-5 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4">
                         <i class="fas fa-shield-alt mt-0.5 text-blue-600"></i>
+
                         <p class="text-xs leading-5 text-blue-700">
-                            Submitted documents are reviewed by an administrator. Rejected documents can be replaced.
-                            Approved documents cannot be replaced here; contact an administrator if an update is required.
+                            Submitted documents are reviewed by an administrator.
+                            Rejected documents can be replaced, while additional certifications can be uploaded
+                            without replacing existing ones. Approved standard documents cannot be replaced here;
+                            contact an administrator if an update is required.
                         </p>
                     </div>
 
                 </div>
+
             </section>
+
 
 
             {{-- ====================================================
@@ -1753,5 +2228,25 @@
     </div>
 
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const paymentType = document.getElementById('paymentType');
+    const utrField = document.getElementById('utrField');
+
+    if (!paymentType || !utrField) return;
+
+    function toggleUtrField() {
+        const isSelfEmployed = paymentType.value === 'Self-Employed';
+
+        utrField.classList.toggle('hidden', !isSelfEmployed);
+    }
+
+    paymentType.addEventListener('change', toggleUtrField);
+
+    // Set the correct visibility on initial page load.
+    toggleUtrField();
+});
+</script>
 
 @endsection

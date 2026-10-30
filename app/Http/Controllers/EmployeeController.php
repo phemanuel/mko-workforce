@@ -6,6 +6,9 @@ use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\EmployeeDocument;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 
 class EmployeeController extends Controller
 {
@@ -147,14 +150,22 @@ class EmployeeController extends Controller
             'roleDetail',
             'workEligibility',
             'payroll',
-            'documents',
-            'skills'
+            'skills',
+        ]);
+
+        // Load documents separately, newest first.
+        $employee->load([
+            'documents' => function ($query) {
+                $query->orderByDesc('created_at');
+            },
         ]);
 
         log_activity(
             'edit_employee_open',
             'Opened employee edit form',
-            $employee->user->name . ' edit form opened by ' . auth()->user()->name
+            ($employee->user?->name ?? 'Unknown Employee')
+                . ' edit form opened by '
+                . (auth()->user()?->name ?? 'Unknown User')
         );
 
         return response()->json($employee);
@@ -394,6 +405,334 @@ class EmployeeController extends Controller
                 'message' => 'We could not update this employee. Please try again. If the problem continues, contact your administrator.',
             ], 500);
         }
+    }
+
+    /**
+     * Upload or resubmit an employee document from the admin employee editor.
+     *
+     * Standard documents reuse their existing record when available.
+     * Other Certification allows multiple files and creates a record per file.
+     */
+    public function uploadDocument(Request $request, Employee $employee)
+    {
+        $standardDocumentTypes = [
+            'Passport',
+            'NI Proof',
+            'DBS',
+            'SIA Licence',
+        ];
+
+        $certificationTypes = [
+            'Other Certification',
+            'Certificates', // Legacy compatibility.
+        ];
+
+        $documentTypes = array_merge(
+            $standardDocumentTypes,
+            $certificationTypes
+        );
+
+        $documentType = $request->input('document_type');
+
+        $isCertification = in_array(
+            $documentType,
+            $certificationTypes,
+            true
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | VALIDATION
+        |--------------------------------------------------------------------------
+        */
+
+        $validated = $request->validate([
+            'document_type' => [
+                'required',
+                'string',
+                Rule::in($documentTypes),
+            ],
+
+            'document' => [
+                Rule::requiredIf(
+                    fn () => in_array(
+                        $request->input('document_type'),
+                        $standardDocumentTypes,
+                        true
+                    )
+                ),
+                Rule::prohibitedIf(
+                    fn () => in_array(
+                        $request->input('document_type'),
+                        $certificationTypes,
+                        true
+                    )
+                ),
+                'nullable',
+                'file',
+                'mimes:jpg,jpeg,png,pdf',
+                'max:2048',
+            ],
+
+            'documents' => [
+                Rule::requiredIf(
+                    fn () => in_array(
+                        $request->input('document_type'),
+                        $certificationTypes,
+                        true
+                    )
+                ),
+                Rule::prohibitedIf(
+                    fn () => in_array(
+                        $request->input('document_type'),
+                        $standardDocumentTypes,
+                        true
+                    )
+                ),
+                'nullable',
+                'array',
+                'min:1',
+                'max:10',
+            ],
+
+            'documents.*' => [
+                'required',
+                'file',
+                'mimes:jpg,jpeg,png,pdf',
+                'max:2048',
+            ],
+
+            'expiry_date' => [
+                'nullable',
+                'date',
+            ],
+        ], [
+            'document_type.required' => 'Please select a document type.',
+            'document_type.in' => 'Please select a valid document type.',
+
+            'document.required' => 'Please select a document file.',
+            'document.mimes' => 'The document must be a JPG, JPEG, PNG or PDF file.',
+            'document.max' => 'The document must not exceed 2 MB.',
+
+            'documents.required' => 'Please select at least one certification file.',
+            'documents.min' => 'Please select at least one certification file.',
+            'documents.max' => 'You can upload a maximum of 10 certification files.',
+            'documents.*.mimes' => 'Each certification must be a JPG, JPEG, PNG or PDF file.',
+            'documents.*.max' => 'Each certification must not exceed 2 MB.',
+
+            'expiry_date.date' => 'Please enter a valid expiry date.',
+        ]);
+
+        $documentType = $validated['document_type'];
+
+        $isCertification = in_array(
+            $documentType,
+            $certificationTypes,
+            true
+        );
+
+        $expiryDate = !empty($validated['expiry_date'])
+            ? $validated['expiry_date']
+            : null;
+
+        /*
+        |--------------------------------------------------------------------------
+        | PREPARE FILES
+        |--------------------------------------------------------------------------
+        */
+
+        $files = $isCertification
+            ? $request->file('documents', [])
+            : [$request->file('document')];
+
+        /*
+        |--------------------------------------------------------------------------
+        | FIND EXISTING STANDARD DOCUMENT
+        |--------------------------------------------------------------------------
+        |
+        | Standard documents reuse their existing record when available.
+        | Certifications always create additional records.
+        */
+
+        $existingDocument = null;
+
+        if (!$isCertification) {
+            $existingDocument = EmployeeDocument::where(
+                'employee_id',
+                $employee->id
+            )
+                ->where('document_type', $documentType)
+                ->first();
+
+            if ($existingDocument) {
+                $currentStatus = strtolower(
+                    trim((string) $existingDocument->status)
+                );
+
+                $verificationStatus = strtolower(
+                    trim((string) $existingDocument->verification_status)
+                );
+
+                $isApproved =
+                    in_array($currentStatus, ['approved', 'verified'], true)
+                    || in_array(
+                        $verificationStatus,
+                        ['approved', 'verified'],
+                        true
+                    );
+
+                if ($isApproved) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'This document has already been approved. Please contact the appropriate administrator if it needs updating.',
+                    ], 422);
+                }
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | STORE FILES AND SAVE RECORDS
+        |--------------------------------------------------------------------------
+        */
+
+        $uploadedPaths = [];
+        $oldFilePath = $existingDocument?->file_path;
+
+        try {
+            foreach ($files as $file) {
+                if (!$file) {
+                    continue;
+                }
+
+                $path = $file->store(
+                    'employee/documents',
+                    'public'
+                );
+
+                if (!$path) {
+                    throw new \RuntimeException(
+                        'The uploaded file could not be stored.'
+                    );
+                }
+
+                $uploadedPaths[] = $path;
+            }
+
+            if (count($uploadedPaths) !== count($files)) {
+                throw new \RuntimeException(
+                    'One or more files could not be uploaded.'
+                );
+            }
+
+            DB::transaction(function () use (
+                $employee,
+                $documentType,
+                $expiryDate,
+                $uploadedPaths,
+                $isCertification,
+                $existingDocument
+            ) {
+                foreach ($uploadedPaths as $path) {
+                    $document = (
+                        !$isCertification && $existingDocument
+                    )
+                        ? $existingDocument
+                        : new EmployeeDocument();
+
+                    $document->employee_id = $employee->id;
+                    $document->document_type = $documentType;
+                    $document->file_path = $path;
+                    $document->expiry_date = $expiryDate;
+
+                    // Keep both review-status fields consistent.
+                    $document->status = 'pending';
+                    $document->verification_status = 'Pending';
+
+                    // Reset the previous review when resubmitting.
+                    $document->verified_by = null;
+                    $document->verified_at = null;
+                    $document->rejection_reason = null;
+
+                    $document->save();
+                }
+            });
+        } catch (\Throwable $exception) {
+            // Remove newly uploaded files if saving the records fails.
+            if (!empty($uploadedPaths)) {
+                Storage::disk('public')->delete($uploadedPaths);
+            }
+
+            report($exception);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'The document upload could not be completed. Please try again.',
+            ], 500);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | REMOVE OLD FILE AFTER SUCCESSFUL REPLACEMENT
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            !$isCertification
+            && $existingDocument
+            && $oldFilePath
+            && $oldFilePath !== ($uploadedPaths[0] ?? null)
+        ) {
+            Storage::disk('public')->delete($oldFilePath);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | SUCCESS MESSAGE
+        |--------------------------------------------------------------------------
+        */
+
+        if ($isCertification) {
+            $count = count($uploadedPaths);
+
+            $message = $count === 1
+                ? 'Other Certification uploaded successfully and is awaiting review.'
+                : $count . ' certifications uploaded successfully and are awaiting review.';
+        } else {
+            $message = $documentType
+                . ' uploaded successfully and is awaiting review.';
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | RETURN REFRESHED DOCUMENTS AS JSON
+        |--------------------------------------------------------------------------
+        |
+        | The admin JavaScript expects a JSON response, not a redirect.
+        */
+
+        $documents = EmployeeDocument::where(
+            'employee_id',
+            $employee->id
+        )
+            ->orderByDesc('created_at')
+            ->get([
+                'id',
+                'employee_id',
+                'document_type',
+                'file_path',
+                'expiry_date',
+                'status',
+                'verification_status',
+                'rejection_reason',
+                'created_at',
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'documents' => $documents,
+        ]);
     }
 
     public function exportCsv()
