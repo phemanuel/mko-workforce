@@ -148,38 +148,40 @@
     <div id="shiftList"
          class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 p-6">
 
+                
         @forelse($shifts as $shift)
 
             @php
 
                 $cardColor = match($shift->status) {
-
                     'Open' => 'from-blue-50 to-cyan-50 border-blue-100',
                     'Assigned' => 'from-yellow-50 to-amber-50 border-yellow-100',
                     'Completed' => 'from-green-50 to-emerald-50 border-green-100',
                     'Cancelled' => 'from-red-50 to-rose-50 border-red-100',
-
                     default => 'from-gray-50 to-slate-50 border-gray-100'
                 };
 
                 $badgeColor = match($shift->status) {
-
                     'Open' => 'bg-blue-100 text-blue-700',
                     'Assigned' => 'bg-yellow-100 text-yellow-700',
                     'Completed' => 'bg-green-100 text-green-700',
                     'Cancelled' => 'bg-red-100 text-red-700',
-
                     default => 'bg-gray-100 text-gray-700'
                 };
+
+                $filled = $shift->required_staff > 0
+                    ? ($shift->assignments_count / $shift->required_staff) * 100
+                    : 0;
 
             @endphp
 
             <!-- CARD -->
-            <div class="shift-card rounded-3xl border
-            bg-gradient-to-br {{ $cardColor }}
-            p-5 shadow-sm hover:shadow-lg transition duration-300"
-
-            data-status="{{ $shift->status }}">
+            <div
+                class="shift-card rounded-3xl border
+                bg-gradient-to-br {{ $cardColor }}
+                p-5 shadow-sm hover:shadow-lg transition duration-300"
+                data-status="{{ $shift->status }}"
+            >
 
                 <!-- TOP -->
                 <div class="flex items-start justify-between gap-4">
@@ -201,30 +203,30 @@
                     <div class="flex items-center gap-2 flex-shrink-0">
 
                         <!-- MORE INFO -->
-                        <button onclick="openShiftDetails({{ $shift->id }})"
+                        <button
+                            onclick="openShiftDetails({{ $shift->id }})"
                             class="flex items-center gap-1 text-xs font-medium text-gray-700
-                                border border-gray-200 bg-white/70
-                                hover:bg-gray-100 hover:border-gray-300
-                                px-2.5 py-1 rounded-lg transition">
-
+                            border border-gray-200 bg-white/70
+                            hover:bg-gray-100 hover:border-gray-300
+                            px-2.5 py-1 rounded-lg transition"
+                        >
                             ℹ️ <span>Info</span>
-
                         </button>
 
                         <!-- STATUS -->
                         <span class="shift-status px-3 py-1 rounded-full text-xs font-semibold {{ $badgeColor }}">
-
                             {{ $shift->status }}
-
                         </span>
 
                     </div>
 
                 </div>
 
+
                 <!-- DETAILS -->
                 <div class="mt-5 space-y-3 text-sm text-gray-700">
 
+                    <!-- SHIFT DATE -->
                     <div class="flex items-center gap-2">
 
                         <div class="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm">
@@ -243,6 +245,8 @@
 
                     </div>
 
+
+                    <!-- WORKING HOURS -->
                     <div class="flex items-center gap-2">
 
                         <div class="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm">
@@ -268,6 +272,8 @@
 
                     </div>
 
+
+                    <!-- LOCATION -->
                     <div class="flex items-center gap-2">
 
                         <div class="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm">
@@ -286,6 +292,30 @@
 
                     </div>
 
+
+                    <!-- DRESS CODE -->
+                    <div class="flex items-start gap-2">
+
+                        <div class="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm flex-shrink-0">
+                            👔
+                        </div>
+
+                        <div class="min-w-0 flex-1">
+
+                            <p class="text-xs text-gray-500">
+                                Dress Code
+                            </p>
+
+                            <p class="font-medium text-gray-800 whitespace-pre-line break-words">
+                                {{ $shift->dress_code ?: 'No dress code specified' }}
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- STAFF & HOURLY RATE -->
                     <div class="grid grid-cols-2 gap-3 pt-2">
 
                         <!-- STAFF REQUIRED -->
@@ -297,11 +327,11 @@
                                     Staff Assigned
                                 </p>
 
-                                <button onclick="viewAssignedStaff({{ $shift->id }})"
-                                        class="text-[11px] text-purple-600 hover:text-purple-800 font-medium">
-
+                                <button
+                                    onclick="viewAssignedStaff({{ $shift->id }})"
+                                    class="text-[11px] text-purple-600 hover:text-purple-800 font-medium"
+                                >
                                     View
-
                                 </button>
 
                             </div>
@@ -309,31 +339,23 @@
                             <div class="mt-2 flex items-end justify-between">
 
                                 <div>
-
                                     <p class="font-bold text-gray-800 text-lg">
                                         {{ $shift->assignments_count }}
+
                                         <span class="text-sm text-gray-400">
                                             / {{ $shift->required_staff }}
                                         </span>
                                     </p>
-
                                 </div>
-
-                                @php
-                                    $filled = $shift->required_staff > 0
-                                        ? ($shift->assignments_count / $shift->required_staff) * 100
-                                        : 0;
-                                @endphp
 
                                 <span class="text-xs font-medium
                                     {{ $filled >= 100
                                         ? 'text-green-600'
                                         : ($filled >= 50
                                             ? 'text-yellow-600'
-                                            : 'text-red-500') }}">
-
+                                            : 'text-red-500') }}"
+                                >
                                     {{ round($filled) }}%
-
                                 </span>
 
                             </div>
@@ -341,22 +363,22 @@
                             <!-- PROGRESS BAR -->
                             <div class="w-full h-2 bg-gray-100 rounded-full mt-3 overflow-hidden">
 
-                                <div class="
-                                    h-full rounded-full transition-all duration-500
-
+                                <div
+                                    class="h-full rounded-full transition-all duration-500
                                     {{ $filled >= 100
                                         ? 'bg-green-500'
                                         : ($filled >= 50
                                             ? 'bg-yellow-400'
-                                            : 'bg-red-400') }}
-                                "
-                                style="width: {{ $filled }}%">
-                                </div>
+                                            : 'bg-red-400') }}"
+                                    style="width: {{ min(100, max(0, $filled)) }}%"
+                                ></div>
 
                             </div>
 
                         </div>
 
+
+                        <!-- HOURLY RATE -->
                         <div class="bg-white rounded-2xl p-3 shadow-sm">
 
                             <p class="text-xs text-gray-500">
@@ -373,54 +395,95 @@
 
                 </div>
 
-                <!-- ACTIONS -->
-            <div class="flex items-center justify-between mt-6 pt-5 border-t border-gray-200">
 
-                <!-- EDIT -->
-                <button onclick="openEditShiftModal({{ $shift->id }})"
-                    class="flex items-center gap-2 text-sm font-medium text-blue-600
-                        border border-blue-200 bg-blue-50/40
-                        hover:bg-blue-100 hover:border-blue-300
-                        px-3 py-1.5 rounded-lg transition">
-
-                    ✏️ <span>Edit</span>
-
-                </button>
-
-                <!-- ASSIGN -->
-                <button onclick="openAssignShiftModal({{ $shift->id }})"
-                    class="flex items-center gap-2 text-sm font-medium text-purple-600
-                        border border-purple-200 bg-purple-50/40
-                        hover:bg-purple-100 hover:border-purple-300
-                        px-3 py-1.5 rounded-lg transition">
-
-                    👥 <span>Assign</span>
-
-                </button>
-
-                <!-- COMPLETE -->
-                @if($shift->status !== 'Completed')
-
-                    <button onclick="markShiftCompleted({{ $shift->id }})"
-                        class="flex items-center gap-2 text-sm font-medium text-green-600
-                            border border-green-200 bg-green-50/40
-                            hover:bg-green-100 hover:border-green-300
-                            px-3 py-1.5 rounded-lg transition">
-
-                        ✅ <span>Complete Shift</span>
-
-                    </button>
-
-                @else
-
-                    <span class="text-xs px-3 py-1 rounded-lg bg-gray-100 text-gray-500 border border-gray-200">
-                        Shift Completed
-                    </span>
-
-                @endif
                 
+                <!-- ACTIONS -->
+                <div class="flex items-center justify-between flex-wrap gap-2 mt-6 pt-5 border-t border-gray-200">
 
-            </div>
+                    <!-- LEFT ACTIONS -->
+                    <div class="flex items-center gap-2 flex-wrap">
+
+                        @if($shift->status !== 'Completed')
+
+                            <!-- EDIT -->
+                            <button
+                                type="button"
+                                onclick="openEditShiftModal({{ $shift->id }})"
+                                class="flex items-center gap-2 text-sm font-medium text-blue-600
+                                border border-blue-200 bg-blue-50/40
+                                hover:bg-blue-100 hover:border-blue-300
+                                px-3 py-1.5 rounded-lg transition"
+                            >
+                                <i class="fas fa-edit"></i>
+                                <span>Edit</span>
+                            </button>
+
+                            <!-- DELETE: ROLE ID 1 ONLY -->
+                            @if(auth()->user()->role_id == 1)
+
+                                <button
+                                    type="button"
+                                    onclick="deleteShift({{ $shift->id }}, @js($shift->title))"
+                                    class="flex items-center gap-2 text-sm font-medium text-red-600
+                                    border border-red-200 bg-red-50/40
+                                    hover:bg-red-100 hover:border-red-300
+                                    px-3 py-1.5 rounded-lg transition"
+                                >
+                                    <i class="fas fa-trash-alt"></i>
+                                    <span>Delete</span>
+                                </button>
+
+                            @endif
+
+                        @endif
+
+                    </div>
+
+
+                    <!-- RIGHT ACTIONS -->
+                    <div class="flex items-center gap-2 flex-wrap">
+
+                        @if($shift->status !== 'Completed')
+
+                            <!-- ASSIGN -->
+                            <button
+                                type="button"
+                                onclick="openAssignShiftModal({{ $shift->id }})"
+                                class="flex items-center gap-2 text-sm font-medium text-purple-600
+                                border border-purple-200 bg-purple-50/40
+                                hover:bg-purple-100 hover:border-purple-300
+                                px-3 py-1.5 rounded-lg transition"
+                            >
+                                <i class="fas fa-users"></i>
+                                <span>Assign</span>
+                            </button>
+
+                            <!-- COMPLETE SHIFT -->
+                            <button
+                                type="button"
+                                onclick="markShiftCompleted({{ $shift->id }})"
+                                class="flex items-center gap-2 text-sm font-medium text-green-600
+                                border border-green-200 bg-green-50/40
+                                hover:bg-green-100 hover:border-green-300
+                                px-3 py-1.5 rounded-lg transition"
+                            >
+                                <i class="fas fa-check-circle"></i>
+                                <span>Complete Shift</span>
+                            </button>
+
+                        @else
+
+                            <span class="text-xs px-3 py-1 rounded-lg bg-green-50 text-green-700 border border-green-200">
+                                <i class="fas fa-check-circle mr-1"></i>
+                                Shift Completed
+                            </span>
+
+                        @endif
+
+                    </div>
+
+                </div>
+
 
             </div>
 
@@ -443,6 +506,7 @@
             </div>
 
         @endforelse
+
         
     </div>
 
@@ -707,6 +771,17 @@
                 </h3>
 
                 <div class="space-y-5">
+                    
+                    <div>
+                        <label class="text-sm font-medium">Shift Dress Code</label>
+                       <textarea
+                        id="shift_dress_code"
+                        name="dress_code"
+                        rows="3"
+                        class="w-full border rounded-xl p-3 mt-1"
+                        placeholder="Specify the required dress code for this shift..."
+                    ></textarea>
+                    </div>                    
 
                     <div>
                         <label class="text-sm font-medium">Instructions</label>
@@ -982,6 +1057,17 @@
                 </h3>
 
                 <div class="space-y-5">
+
+                    <div>
+                        <label class="text-sm font-medium">Shift Dress Code</label>
+                       <textarea
+                            id="edit_dress_code"
+                            name="dress_code"
+                            class="w-full border rounded-xl p-3 mt-1"
+                            rows="3"
+                            placeholder="Specify the required dress code for this shift..."
+                        ></textarea>
+                    </div>
 
                     <div>
                         <label class="text-sm font-medium">Instructions</label>
@@ -1480,7 +1566,11 @@ window.openEditShiftModal = async function (id)
         // Fill fields
         document.getElementById('edit_shift_id').value = shift.id ?? '';
         document.getElementById('edit_title').value = shift.title ?? '';
-        document.getElementById('edit_shift_date').value = shift.shift_date ?? '';
+        const shiftDate = shift.shift_date
+            ? String(shift.shift_date).substring(0, 10)
+            : '';
+
+        document.getElementById('edit_shift_date').value = shiftDate;
         document.getElementById('edit_start_time').value = shift.start_time ?? '';
         document.getElementById('edit_end_time').value = shift.end_time ?? '';        
         document.getElementById('edit_timezone').value = shift.timezone ?? '';
@@ -1495,6 +1585,7 @@ window.openEditShiftModal = async function (id)
 
         document.getElementById('edit_instructions').value = shift.instructions ?? '';
         document.getElementById('edit_notes').value = shift.notes ?? '';
+        document.getElementById('edit_dress_code').value = shift.dress_code ?? '';
 
         // Open modal
         const modal = document.getElementById('editShiftModal');
@@ -1552,6 +1643,7 @@ document.getElementById('editShiftForm')
 
     formData.append('instructions', document.getElementById('edit_instructions')?.value || '');
     formData.append('notes', document.getElementById('edit_notes')?.value || '');
+    formData.append('dress_code',document.getElementById('edit_dress_code')?.value || '');
 
     try {
 
@@ -2235,6 +2327,83 @@ function closeShiftInspector()
     document.getElementById('shiftInspector')
         .classList.add('hidden');
 }
+
+</script>
+
+<script>
+    
+/**
+ * ---------------------------------------------------------
+ * DELETE SHIFT
+ * ---------------------------------------------------------
+ */
+
+window.deleteShift = async function (id, title = 'this shift') {
+
+    // Confirmation
+    const confirmed = confirm(
+        `Are you sure you want to delete "${title}"?\n\nThis action cannot be undone.`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        const response = await fetch(`/admin/shifts/${id}`, {
+
+            method: 'DELETE',
+
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector(
+                    'meta[name="csrf-token"]'
+                ).content,
+
+                'Accept': 'application/json'
+            }
+
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+
+            throw new Error(
+                data.message || 'Failed to delete shift.'
+            );
+
+        }
+
+        // Success notification
+        showToast(
+            data.message || 'Shift deleted successfully.',
+            'success'
+        );
+
+        // Refresh shift cards
+        if (typeof loadShifts === 'function') {
+
+            await loadShifts();
+
+        } else {
+
+            location.reload();
+
+        }
+
+    } catch (error) {
+
+        console.error('Delete Shift Error:', error);
+
+        showToast(
+            error.message || 'Unable to delete shift.',
+            'error'
+        );
+
+    }
+
+};
 
 </script>
 @endsection

@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Attendance;
 use App\Models\ShiftAssignment;
 use Carbon\Carbon;
+use App\Models\Shift;
+use Illuminate\Support\Facades\DB;
 
 class StaffShiftController extends Controller
 {
@@ -23,6 +25,50 @@ class StaffShiftController extends Controller
         $employee = $user->employee;
 
         abort_if(!$employee, 403, 'Employee profile not found.');
+
+        /*
+        |--------------------------------------------------------------------------
+        | AVAILABLE SHIFTS MATCHING EMPLOYEE ROLE
+        |--------------------------------------------------------------------------
+        */
+
+        $availableShifts = collect();
+
+        $employeeRole = $employee->roleDetail?->role_type;
+
+        if ($employeeRole) {
+            $availableShifts = Shift::with('supervisor')
+                ->where('role_required', $employeeRole)
+                ->whereIn('status', ['Open', 'Assigned'])
+                ->whereDate('shift_date', '>=', today())
+
+                // Exclude shifts that are already full.
+                ->whereRaw("
+                    (
+                        SELECT COUNT(*)
+                        FROM shift_assignments
+                        WHERE shift_assignments.shift_id = shifts.id
+                        AND shift_assignments.status IN ('Assigned', 'Accepted')
+                    ) < shifts.required_staff
+                ")
+
+                // Prevent duplicate active or completed assignments.
+                ->whereDoesntHave('assignments', function ($query) use ($employee) {
+                    $query->where('employee_id', $employee->id)
+                        ->whereIn('status', ['Assigned', 'Accepted', 'Completed']);
+                })
+
+                // Display the current number of occupied positions.
+                ->withCount([
+                    'assignments as occupied_positions' => function ($query) {
+                        $query->whereIn('status', ['Assigned', 'Accepted']);
+                    }
+                ])
+
+                ->orderBy('shift_date')
+                ->orderBy('start_time')
+                ->get();
+        }
 
         /*
         |--------------------------------------------------------------------------
@@ -135,7 +181,7 @@ class StaffShiftController extends Controller
             ->count();
 
         $pendingShifts = ShiftAssignment::where('employee_id', $employee->id)
-            ->where('status', 'Pending')
+            ->where('status', 'Assigned')
             ->count();
 
         $upcomingShifts = ShiftAssignment::where('employee_id', $employee->id)
@@ -215,7 +261,8 @@ class StaffShiftController extends Controller
             'recentAttendance',
             'recentShifts',
             'pendingShifts',
-            'attendanceRate'
+            'attendanceRate',
+            'availableShifts'
         ));
     }
 
@@ -251,5 +298,221 @@ class StaffShiftController extends Controller
         ]);
 
         return back()->with('success', 'Shift declined successfully.');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | ACCEPT AVAILABLE SHIFT
+    |--------------------------------------------------------------------------
+    */
+
+    public function acceptAvailable($id)
+    {
+        $user = Auth::user();
+
+        $employee = $user->employee;
+
+        abort_if(!$employee, 403, 'Employee profile not found.');
+
+        try {
+
+            $result = DB::transaction(function () use ($id, $employee) {
+
+                /*
+                |--------------------------------------------------------------------------
+                | LOCK SHIFT
+                |--------------------------------------------------------------------------
+                */
+
+                $shift = Shift::where('id', $id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                /*
+                |--------------------------------------------------------------------------
+                | VERIFY EMPLOYEE ROLE
+                |--------------------------------------------------------------------------
+                */
+
+                $employeeRole = $employee->roleDetail?->role_type;
+
+                if (
+                    !$employeeRole ||
+                    $employeeRole !== $shift->role_required
+                ) {
+
+                    return [
+                        'success' => false,
+                        'message' => 'This shift is not available for your role.',
+                        'status' => 403
+                    ];
+
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | VERIFY SHIFT STATUS
+                |--------------------------------------------------------------------------
+                */
+
+                if (!in_array($shift->status, ['Open', 'Assigned'])) {
+
+                    return [
+                        'success' => false,
+                        'message' => "This shift is {$shift->status} and cannot be accepted.",
+                        'status' => 422
+                    ];
+
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | VERIFY SHIFT DATE
+                |--------------------------------------------------------------------------
+                */
+
+                if (Carbon::parse($shift->shift_date)->startOfDay()->lt(today())) {
+
+                    return [
+                        'success' => false,
+                        'message' => 'This shift has already passed.',
+                        'status' => 422
+                    ];
+
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | PREVENT ACCEPTING A LOCKED SHIFT
+                |--------------------------------------------------------------------------
+                */
+
+                if ($shift->isLocked()) {
+
+                    return [
+                        'success' => false,
+                        'message' => 'This shift has already started and can no longer be accepted.',
+                        'status' => 422
+                    ];
+
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | CHECK EXISTING ASSIGNMENT
+                |--------------------------------------------------------------------------
+                */
+
+                $assignment = ShiftAssignment::where('shift_id', $shift->id)
+                    ->where('employee_id', $employee->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($assignment && $assignment->status !== 'Declined') {
+
+                    return [
+                        'success' => false,
+                        'message' => 'You already have an assignment for this shift.',
+                        'status' => 422
+                    ];
+
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | CHECK AVAILABLE CAPACITY
+                |--------------------------------------------------------------------------
+                */
+
+                $occupiedPositions = ShiftAssignment::where('shift_id', $shift->id)
+                    ->whereIn('status', ['Assigned', 'Accepted'])
+                    ->count();
+
+                if ($occupiedPositions >= $shift->required_staff) {
+
+                    return [
+                        'success' => false,
+                        'message' => 'Sorry, this shift is already full. Please check other available shifts.',
+                        'status' => 422
+                    ];
+
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | CREATE OR REACTIVATE ASSIGNMENT
+                |--------------------------------------------------------------------------
+                */
+
+                if ($assignment) {
+
+                    $assignment->update([
+                        'status' => 'Accepted'
+                    ]);
+
+                } else {
+
+                    $assignment = ShiftAssignment::create([
+                        'shift_id' => $shift->id,
+                        'employee_id' => $employee->id,
+                        'status' => 'Accepted'
+                    ]);
+
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | CREATE OR RESTORE ATTENDANCE RECORD
+                |--------------------------------------------------------------------------
+                */
+
+                Attendance::firstOrCreate(
+                    [
+                        'shift_assignment_id' => $assignment->id
+                    ],
+                    [
+                        'shift_id' => $shift->id,
+                        'employee_id' => $employee->id,
+                        'status' => 'Pending'
+                    ]
+                );
+
+                /*
+                |--------------------------------------------------------------------------
+                | UPDATE SHIFT STATUS
+                |--------------------------------------------------------------------------
+                */
+
+                $activeAssignments = ShiftAssignment::where('shift_id', $shift->id)
+                    ->whereIn('status', ['Assigned', 'Accepted'])
+                    ->count();
+
+                $shift->update([
+                    'status' => $activeAssignments > 0 ? 'Assigned' : 'Open'
+                ]);
+
+                return [
+                    'success' => true,
+                    'message' => 'Shift accepted successfully, check in from your dashboards(Today shifts).',
+                    'status' => 200
+                ];
+
+            });
+
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message']
+            ], $result['status']);
+
+        } catch (\Throwable $e) {
+
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to accept this shift at the moment. Please try again.'
+            ], 500);
+
+        }
     }
 }

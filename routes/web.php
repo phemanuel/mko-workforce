@@ -143,6 +143,7 @@ use App\Http\Controllers\StaffProfileController;
         Route::post('shifts/{id}/assign', [ShiftController::class, 'assign']);
         Route::post('/shifts/unassign/{assignment}', [ShiftController::class, 'unassign'])
         ->name('shifts.unassign');
+    
 
         //--------Attendance Routes
          Route::get('/attendance', [AttendanceController::class, 'index'])
@@ -202,6 +203,12 @@ use App\Http\Controllers\StaffProfileController;
 
         Route::post('/my-shifts/{id}/decline', [StaffShiftController::class, 'decline'])
             ->name('shifts.decline');
+
+        Route::get('/my-shifts/available', [StaffShiftController::class, 'available'])
+            ->name('shifts.available');
+
+        Route::post('/my-shifts/{id}/accept-available', [StaffShiftController::class, 'acceptAvailable'])
+            ->name('shifts.accept-available');
 
         Route::post('/attendance/check-in', [AttendanceController::class, 'checkIn'])
             ->name('attendance.checkin');

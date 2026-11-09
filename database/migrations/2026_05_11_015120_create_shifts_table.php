@@ -19,6 +19,8 @@ return new class extends Migration
 
             $table->text('description')->nullable();
 
+            $table->text('dress_code')->nullable();
+
             $table->date('shift_date');
 
             $table->time('start_time');

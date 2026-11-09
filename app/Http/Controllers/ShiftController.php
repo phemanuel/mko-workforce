@@ -68,6 +68,7 @@ class ShiftController extends Controller
                 'instructions' => 'nullable|string',
                 'notes' => 'nullable|string',
                 'attachment' => 'nullable|file|max:5120',
+                'dress_code' => 'nullable|string|max:2000',
             ]);
 
             /*
@@ -112,6 +113,7 @@ class ShiftController extends Controller
                 'supervisor_id' => $supervisorId,
                 'instructions' => $validated['instructions'] ?? null,
                 'notes' => $validated['notes'] ?? null,
+                'dress_code' => $validated['dress_code'] ?? null,
                 'attachment' => $attachmentPath,
 
                 'status' => 'Open',
@@ -221,13 +223,15 @@ class ShiftController extends Controller
 
             'notes' => 'nullable|string',
 
+            'dress_code' => 'nullable|string|max:2000',
+
         ]);
 
         $shift->update($validated);
 
         log_activity(
-                'shift_created',
-                'Shift created',
+                'shift_Updated',
+                'Shift updated',
                 $shift->title . ' updated by ' . auth()->user()->name
             );
 
@@ -242,50 +246,97 @@ class ShiftController extends Controller
         ]);
     }
     
+    
+    /**
+     * Delete the specified shift.
+     */
     public function destroy($id)
     {
-        $shift = Shift::findOrFail($id);
+        // --------------------------------------------------
+        // RESTRICT DELETION TO ROLE ID 1
+        // --------------------------------------------------
 
-        /*
-        |--------------------------------------------------------------------------
-        | Prevent Deleting Locked Shift
-        |--------------------------------------------------------------------------
-        */
-
-        if ($shift->isLocked()) {
+        if (auth()->user()->role_id != 1) {
 
             return response()->json([
                 'success' => false,
-                'message' => 'This shift is locked because attendance has already started. It cannot be deleted.'
-            ], 422);
+                'message' => 'You are not authorized to delete shifts.'
+            ], 403);
 
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Prevent Deleting Shift With Assignments
-        |--------------------------------------------------------------------------
-        */
+        try {
 
-        if ($shift->assignments()->exists()) {
+            $shift = Shift::findOrFail($id);
+
+            // --------------------------------------------------
+            // PREVENT DELETING LOCKED SHIFTS
+            // --------------------------------------------------
+
+            if ($shift->isLocked()) {
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This shift is locked because attendance has already started. It cannot be deleted.'
+                ], 422);
+
+            }
+
+            // --------------------------------------------------
+            // PREVENT DELETING SHIFTS WITH ASSIGNMENTS
+            // --------------------------------------------------
+
+            if ($shift->assignments()->exists()) {
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Remove all assigned staff before deleting this shift.'
+                ], 422);
+
+            }
+
+            // Store title before deletion for activity logging
+            $shiftTitle = $shift->title;
+
+            // --------------------------------------------------
+            // DELETE SHIFT
+            // --------------------------------------------------
+
+            $shift->delete();
+
+            // --------------------------------------------------
+            // ACTIVITY LOG
+            // --------------------------------------------------
+
+            log_activity(
+                'shift_deleted',
+                'Shift deleted',
+                $shiftTitle . ' deleted by ' . auth()->user()->name
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Shift deleted successfully.'
+            ]);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
 
             return response()->json([
                 'success' => false,
-                'message' => 'Remove all assigned staff before deleting this shift.'
-            ], 422);
+                'message' => 'The selected shift could not be found.'
+            ], 404);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to delete this shift. Please try again.',
+                'error' => $e->getMessage()
+            ], 500);
 
         }
-
-        $shift->delete();
-
-        return response()->json([
-
-            'success' => true,
-
-            'message' => 'Shift deleted successfully.'
-
-        ]);
     }
+
     
 
     public function complete($id)
@@ -325,8 +376,8 @@ class ShiftController extends Controller
         | ASSIGNED STAFF (ACTIVE ONLY)
         |--------------------------------------------------------------------------
         */
-        $assigned = ShiftAssignment::where('shift_id', $id)
-            ->where('status', 'Assigned')
+       $assigned = ShiftAssignment::where('shift_id', $id)
+            ->whereIn('status', ['Assigned', 'Accepted'])
             ->with('employee.user')
             ->get();
 
@@ -342,7 +393,9 @@ class ShiftController extends Controller
         | LOAD ONLY AVAILABLE STAFF (EXCLUDING ASSIGNED)
         |--------------------------------------------------------------------------
         */
-        $staff = Employee::where('primary_role', $shift->role_required)
+       $staff = Employee::whereHas('roleDetail', function ($query) use ($shift) {
+            $query->where('role_type', $shift->role_required);
+        })
             ->whereNotIn('id', $assignedEmployeeIds)
             ->with('user')
             ->get();
@@ -405,7 +458,7 @@ class ShiftController extends Controller
         */
 
         $currentCount = ShiftAssignment::where('shift_id', $id)
-            ->where('status', 'Assigned')
+            ->whereIn('status', ['Assigned', 'Accepted'])
             ->count();
 
         $incoming = count($request->employees);
@@ -484,7 +537,7 @@ class ShiftController extends Controller
         */
 
         $activeAssignments = ShiftAssignment::where('shift_id', $id)
-            ->where('status', 'Assigned')
+            ->whereIn('status', ['Assigned', 'Accepted'])
             ->count();
 
         $shift->update([
@@ -522,7 +575,7 @@ class ShiftController extends Controller
             'shift_status' => $shift->status
 
         ]);
-    }
+    } 
 
     public function unassign($assignmentId)
     {
@@ -591,7 +644,7 @@ class ShiftController extends Controller
                 'shift_id',
                 $shift->id
             )
-            ->where('status', 'Assigned')
+            ->whereIn('status', ['Assigned', 'Accepted'])
             ->count();
 
             $shift->update([

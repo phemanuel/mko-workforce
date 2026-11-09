@@ -9,6 +9,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class AttendanceController extends Controller
 {
@@ -49,11 +50,19 @@ class AttendanceController extends Controller
     */
     public function checkIn(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'attendance_id' => 'required|exists:attendances,id',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors(),
+            ], 422);
+        }
 
         $attendance = Attendance::with([
             'shift',
@@ -102,13 +111,15 @@ class AttendanceController extends Controller
 
         $now = Carbon::now($timezone);
 
+        $shiftDate = Carbon::parse($shift->shift_date)->format('Y-m-d');
+
         $shiftStart = Carbon::parse(
-            $shift->shift_date . ' ' . $shift->start_time,
+            $shiftDate . ' ' . $shift->start_time,
             $timezone
         );
 
         $shiftEnd = Carbon::parse(
-            $shift->shift_date . ' ' . $shift->end_time,
+            $shiftDate . ' ' . $shift->end_time,
             $timezone
         );
 
@@ -210,11 +221,19 @@ class AttendanceController extends Controller
     */
     public function checkOut(Request $request)
     {
-        $request->validate([
+       $validator = Validator::make($request->all(), [
             'attendance_id' => 'required|exists:attendances,id',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors(),
+            ], 422);
+        }
 
         $attendance = Attendance::with([
             'shift',
@@ -273,8 +292,10 @@ class AttendanceController extends Controller
 
         $now = Carbon::now($timezone);
 
+        $shiftDate = Carbon::parse($shift->shift_date)->format('Y-m-d');
+
         $shiftEnd = Carbon::parse(
-            $shift->shift_date.' '.$shift->end_time,
+            $shiftDate . ' ' . $shift->end_time,
             $timezone
         );
 
@@ -302,7 +323,7 @@ class AttendanceController extends Controller
         |--------------------------------------------------------------------------
         */
          $workedMinutes = $attendance->check_in_time
-            ->diffInMinutes($attendance->check_out_time);
+          ->diffInMinutes($now);
 
         $attendance->update([
 

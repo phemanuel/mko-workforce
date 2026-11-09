@@ -20,6 +20,7 @@ class Shift extends Model
         'supervisor_id',
         'instructions',
         'notes',
+        'dress_code',
         'latitude',
         'longitude',
         'attachment',
